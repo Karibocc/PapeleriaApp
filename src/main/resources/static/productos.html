@@ -5,118 +5,190 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Productos - Papelería App</title>
     <link href="css/styles.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <link href="https://use.fontawesome.com/releases/v6.3.0/css/all.css" rel="stylesheet" />
 </head>
-<body class="sb-nav-fixed">
-    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+<body>
+    <!-- Barra de navegación superior moderna -->
+    <nav class="navbar-modern navbar navbar-expand navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="index.html">Papelería App</a>
-            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle"><i class="fas fa-bars"></i></button>
-            <div class="ms-auto">
-                <span class="text-white me-3" id="userName">Usuario</span>
-                <span class="badge bg-primary" id="userRol"></span>
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-store"></i> Papelería App
+            </a>
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="ms-auto d-flex align-items-center">
+                <div class="dropdown me-3 user-dropdown">
+                    <button class="dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle me-1"></i>
+                        <span id="userName">Usuario</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><span class="dropdown-item-text" id="userRolText"></span></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" id="btnLogout">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </a></li>
+                    </ul>
+                </div>
+                <span class="badge badge-role" id="userRolBadge"></span>
             </div>
         </div>
     </nav>
-    <div id="layoutSidenav">
-        <div id="layoutSidenav_nav">
-            <nav class="sb-sidenav accordion sb-sidenav-dark">
-                <div class="sb-sidenav-menu">
-                    <div class="nav">
-                        <div class="sb-sidenav-menu-heading">Módulos</div>
-                        <a class="nav-link" href="index.html"><div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>Dashboard</a>
-                        <a class="nav-link active" href="productos.html"><div class="sb-nav-link-icon"><i class="fas fa-box"></i></div>Productos</a>
-                        <a class="nav-link" href="clientes.html"><div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>Clientes</a>
-                        <a class="nav-link" href="proveedores.html"><div class="sb-nav-link-icon"><i class="fas fa-truck"></i></div>Proveedores</a>
-                        <a class="nav-link" href="ventas.html"><div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>Ventas</a>
-                        <a class="nav-link" href="compras.html"><div class="sb-nav-link-icon"><i class="fas fa-dolly"></i></div>Compras</a>
-                        <a class="nav-link" href="reportes.html"><div class="sb-nav-link-icon"><i class="fas fa-chart-bar"></i></div>Reportes</a>
-                        <a class="nav-link" href="configuracion.html"><div class="sb-nav-link-icon"><i class="fas fa-cog"></i></div>Configuración</a>
-                        <a class="nav-link" href="usuarios.html"><div class="sb-nav-link-icon"><i class="fas fa-user-shield"></i></div>Usuarios</a>
-                        <div class="sb-sidenav-menu-heading">Opciones</div>
-                        <a class="nav-link" href="#" id="btnLogout"><div class="sb-nav-link-icon"><i class="fas fa-sign-out-alt"></i></div>Cerrar Sesión</a>
+
+    <div class="d-flex">
+        <!-- Sidebar moderna -->
+        <div class="sidebar-modern" id="sidebar" style="width: 260px; min-height: calc(100vh - 60px);">
+            <div class="sidebar-heading">Módulos</div>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="index.html">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a class="nav-link active" href="productos.html">
+                    <i class="fas fa-box"></i> Productos
+                </a>
+                <a class="nav-link" href="clientes.html">
+                    <i class="fas fa-users"></i> Clientes
+                </a>
+                <a class="nav-link" href="proveedores.html">
+                    <i class="fas fa-truck"></i> Proveedores
+                </a>
+                <a class="nav-link" href="ventas.html">
+                    <i class="fas fa-shopping-cart"></i> Ventas
+                </a>
+                <a class="nav-link" href="compras.html">
+                    <i class="fas fa-dolly"></i> Compras
+                </a>
+                <a class="nav-link" href="reportes.html">
+                    <i class="fas fa-chart-bar"></i> Reportes
+                </a>
+                <a class="nav-link" href="configuracion.html">
+                    <i class="fas fa-cog"></i> Configuración
+                </a>
+                <a class="nav-link" href="usuarios.html">
+                    <i class="fas fa-user-shield"></i> Usuarios
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <small>Sistema de Gestión</small><br>
+                <small>Papelería App v1.0</small>
+            </div>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="main-content flex-grow-1">
+            <div class="container-fluid px-4">
+                <div class="d-flex justify-content-between align-items-center mt-2 mb-4">
+                    <h1>Productos</h1>
+                    <div>
+                        <span class="me-3">Total Productos: <strong id="totalProductos">0</strong></span>
+                        <button class="btn btn-primary-custom" id="btnNuevoProducto" data-bs-toggle="modal" data-bs-target="#productoModal" onclick="limpiarFormularioProducto()" style="display: none;">
+                            <i class="fas fa-plus"></i> Nuevo Producto
+                        </button>
                     </div>
                 </div>
-                <div class="sb-sidenav-footer">Papelería App</div>
-            </nav>
-        </div>
-        <div id="layoutSidenav_content">
-            <main>
-                <div class="container-fluid px-4">
-                    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
-                        <h1>Productos</h1>
-                        <div>
-                            <span class="me-3">Total Productos: <strong id="totalProductos">0</strong></span>
-                            <button class="btn btn-primary" id="btnNuevoProducto" data-bs-toggle="modal" data-bs-target="#productoModal" onclick="limpiarFormularioProducto()" style="display: none;"><i class="fas fa-plus"></i> Nuevo Producto</button>
+
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="chart-card card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-table me-1"></i> Listado de Productos
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label>Mostrar registros: </label>
+                                    <select id="pageLength" class="form-select form-select-sm d-inline-block w-auto ms-2">
+                                        <option value="5">5</option>
+                                        <option value="10" selected>10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                </div>
+                                <table id="tablaProductos" class="table table-striped">
+                                    <thead>
+                                        <tr><th>ID</th><th>Código</th><th>Nombre</th><th>Stock</th><th>Precio Venta</th><th>Estado</th><th id="thAcciones">Acciones</th></tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="row">
-                        <div class="col-lg-8">
-                            <div class="card mb-4">
-                                <div class="card-header"><i class="fas fa-table me-1"></i> Listado de Productos</div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label>Mostrar registros: </label>
-                                        <select id="pageLength" class="form-select form-select-sm d-inline-block w-auto ms-2">
-                                            <option value="5">5</option>
-                                            <option value="10" selected>10</option>
-                                            <option value="25">25</option>
-                                            <option value="50">50</option>
-                                            <option value="100">100</option>
-                                        </select>
-                                    </div>
-                                    <table id="tablaProductos" class="table table-striped">
+                    <div class="col-lg-4">
+                        <div class="chart-card card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-chart-bar me-1"></i> Stock por categoría
+                            </div>
+                            <div class="card-body">
+                                <canvas id="stockChart" width="100%" height="200"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-exclamation-triangle me-1"></i> Productos con stock bajo
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-stock table-sm">
                                         <thead>
-                                            <tr><th>ID</th><th>Código</th><th>Nombre</th><th>Stock</th><th>Precio Venta</th><th>Estado</th><th id="thAcciones">Acciones</th></tr>
+                                            <tr><th>Producto</th><th>Stock</th><th>Mínimo</th>
                                         </thead>
-                                        <tbody></tbody>
+                                        <tbody id="tablaStockBajoBody"></tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-4">
-                            <div class="card mb-4">
-                                <div class="card-header"><i class="fas fa-chart-bar me-1"></i> Stock por categoría</div>
-                                <div class="card-body"><canvas id="stockChart" width="100%" height="200"></canvas></div>
-                            </div>
-                            <div class="card mb-4">
-                                <div class="card-header"><i class="fas fa-exclamation-triangle me-1"></i> Productos con stock bajo</div>
-                                <div class="card-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-sm" id="tablaStockBajo">
-                                            <thead><tr><th>Producto</th><th>Stock</th><th>Mínimo</th></tr></thead>
-                                            <tbody></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
+                    </div>
+                </div>
+            </div>
+
+            <footer class="footer-modern">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">Copyright &copy; Papelería App 2026</div>
+                        <div>
+                            <a href="#">Política de Privacidad</a>
+                            <span class="mx-1">&middot;</span>
+                            <a href="#">Términos y Condiciones</a>
                         </div>
                     </div>
                 </div>
-            </main>
-            <footer class="py-4 bg-light mt-auto"><div class="container-fluid px-4"><div class="text-muted text-center">Copyright &copy; Papelería App 2026</div></div></footer>
+            </footer>
         </div>
     </div>
 
+    <!-- Modal Producto -->
     <div class="modal fade" id="productoModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Producto</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header">
+                    <h5 class="modal-title">Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body">
                     <input type="hidden" id="productoId">
                     <div class="mb-3"><label>Código Barras</label><input type="text" id="codigoBarras" class="form-control"></div>
                     <div class="mb-3"><label>Nombre</label><input type="text" id="nombre" class="form-control"></div>
                     <div class="mb-3"><label>Descripción</label><textarea id="descripcion" class="form-control"></textarea></div>
                     <div class="mb-3"><label>Categoría</label><select id="categoriaId" class="form-control"></select></div>
-                    <div class="row"><div class="col-md-6"><label>Precio Compra</label><input type="number" id="precioCompra" class="form-control" step="0.01"></div><div class="col-md-6"><label>Precio Venta</label><input type="number" id="precioVenta" class="form-control" step="0.01"></div></div>
-                    <div class="row"><div class="col-md-6"><label>Stock Actual</label><input type="number" id="stockActual" class="form-control"></div><div class="col-md-6"><label>Stock Mínimo</label><input type="number" id="stockMinimo" class="form-control"></div></div>
+                    <div class="row">
+                        <div class="col-md-6"><label>Precio Compra</label><input type="number" id="precioCompra" class="form-control" step="0.01"></div>
+                        <div class="col-md-6"><label>Precio Venta</label><input type="number" id="precioVenta" class="form-control" step="0.01"></div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6"><label>Stock Actual</label><input type="number" id="stockActual" class="form-control"></div>
+                        <div class="col-md-6"><label>Stock Mínimo</label><input type="number" id="stockMinimo" class="form-control"></div>
+                    </div>
                     <div class="mb-3"><label>Unidad Medida</label><input type="text" id="unidadMedida" class="form-control" value="unidad"></div>
                     <div class="mb-3"><label>Activo</label><select id="activo" class="form-control"><option value="true">Sí</option><option value="false">No</option></select></div>
                 </div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-primary" onclick="guardarProducto()">Guardar</button></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary-custom" onclick="guardarProducto()">Guardar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -127,126 +199,36 @@
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/api.js"></script>
-    <script src="js/role-permissions.js"></script>
+    <script src="js/productos.js"></script>
     <script>
-        const API_BASE_URL = 'http://localhost:8085/api';
-        let tablaProductos = null;
-        let stockChart = null;
-        let productosData = [];
-        let categoriasData = [];
-
-        function getAuthToken() { return localStorage.getItem('authToken'); }
-        function getHeaders() { const token = getAuthToken(); return { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' }; }
-
-        async function cargarCategorias() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/categorias`, { headers: getHeaders() });
-                if (response.ok) categoriasData = await response.json();
-            } catch (error) { console.error('Error cargando categorías:', error); }
-        }
-
-        async function cargarProductos() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/productos`, { headers: getHeaders() });
-                if (response.ok) {
-                    productosData = await response.json();
-                    document.getElementById('totalProductos').innerText = productosData.length;
-                    actualizarTabla();
-                    actualizarGraficas();
-                    cargarStockBajo();
-                }
-            } catch (error) { console.error('Error cargando productos:', error); }
-        }
-
-        function actualizarTabla() {
-            const pageLength = parseInt(document.getElementById('pageLength').value);
-            if (tablaProductos) tablaProductos.destroy();
-            tablaProductos = $('#tablaProductos').DataTable({
-                data: productosData, pageLength: pageLength, lengthMenu: [5, 10, 25, 50, 100],
-                language: { url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json' },
-                columns: [
-                    { data: 'idProducto' }, { data: 'codigoBarras', defaultContent: '-' }, { data: 'nombre' },
-                    { data: 'stockActual' }, { data: 'precioVenta', render: data => `$${data}` },
-                    { data: 'activo', render: data => data ? 'Activo' : 'Inactivo' },
-                    { data: null, orderable: false, visible: document.getElementById('thAcciones').style.display !== 'none',
-                      render: (data) => `<button class="btn btn-sm btn-warning" onclick="editarProducto(${data.idProducto})"><i class="fas fa-edit"></i></button>
-                                        <button class="btn btn-sm btn-danger" onclick="eliminarProducto(${data.idProducto})"><i class="fas fa-trash"></i></button>` }
-                ]
-            });
-        }
-
-        function actualizarGraficas() {
-            const stockPorCategoria = {};
-            productosData.forEach(p => { if (p.categoria) stockPorCategoria[p.categoria.nombre] = (stockPorCategoria[p.categoria.nombre] || 0) + (p.stockActual || 0); });
-            const ctx = document.getElementById('stockChart').getContext('2d');
-            if (stockChart) stockChart.destroy();
-            stockChart = new Chart(ctx, { type: 'bar', data: { labels: Object.keys(stockPorCategoria), datasets: [{ label: 'Stock', data: Object.values(stockPorCategoria), backgroundColor: '#4e73df' }] }, options: { responsive: true } });
-        }
-
-        async function cargarStockBajo() {
-            const stockBajo = productosData.filter(p => p.stockActual <= p.stockMinimo);
-            const tbody = document.querySelector('#tablaStockBajo tbody');
-            tbody.innerHTML = '';
-            stockBajo.slice(0, 5).forEach(p => { tbody.innerHTML += `<tr><td>${p.nombre}</td><td>${p.stockActual}</td><td>${p.stockMinimo}</td></tr>`; });
-        }
-
-        document.getElementById('pageLength').addEventListener('change', () => actualizarTabla());
-
-        function limpiarFormularioProducto() {
-            document.getElementById('productoId').value = ''; document.getElementById('codigoBarras').value = ''; document.getElementById('nombre').value = '';
-            document.getElementById('descripcion').value = ''; document.getElementById('precioCompra').value = ''; document.getElementById('precioVenta').value = '';
-            document.getElementById('stockActual').value = ''; document.getElementById('stockMinimo').value = ''; document.getElementById('unidadMedida').value = 'unidad';
-            document.getElementById('activo').value = 'true';
-        }
-
-        async function editarProducto(id) {
-            const producto = productosData.find(p => p.idProducto === id);
-            if (producto) {
-                document.getElementById('productoId').value = producto.idProducto; document.getElementById('codigoBarras').value = producto.codigoBarras || '';
-                document.getElementById('nombre').value = producto.nombre; document.getElementById('descripcion').value = producto.descripcion || '';
-                document.getElementById('precioCompra').value = producto.precioCompra; document.getElementById('precioVenta').value = producto.precioVenta;
-                document.getElementById('stockActual').value = producto.stockActual; document.getElementById('stockMinimo').value = producto.stockMinimo;
-                document.getElementById('unidadMedida').value = producto.unidadMedida || 'unidad'; document.getElementById('activo').value = producto.activo ? 'true' : 'false';
-                if (categoriasData.length) document.getElementById('categoriaId').value = producto.categoria?.idCategoria || '';
-                new bootstrap.Modal(document.getElementById('productoModal')).show();
+        // Toggle sidebar
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar.style.width === '260px') {
+                sidebar.style.width = '70px';
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'none');
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'none');
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '0');
+            } else {
+                sidebar.style.width = '260px';
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'inline');
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'block');
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '12px');
             }
-        }
+        });
 
-        async function guardarProducto() {
-            const producto = { idProducto: document.getElementById('productoId').value || null, codigoBarras: document.getElementById('codigoBarras').value, nombre: document.getElementById('nombre').value, descripcion: document.getElementById('descripcion').value, idCategoria: document.getElementById('categoriaId').value || null, precioCompra: parseFloat(document.getElementById('precioCompra').value), precioVenta: parseFloat(document.getElementById('precioVenta').value), stockActual: parseInt(document.getElementById('stockActual').value), stockMinimo: parseInt(document.getElementById('stockMinimo').value), unidadMedida: document.getElementById('unidadMedida').value, activo: document.getElementById('activo').value === 'true' };
-            try {
-                const url = producto.idProducto ? `${API_BASE_URL}/productos/${producto.idProducto}` : `${API_BASE_URL}/productos`;
-                const method = producto.idProducto ? 'PUT' : 'POST';
-                const response = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(producto) });
-                if (response.ok) { bootstrap.Modal.getInstance(document.getElementById('productoModal')).hide(); cargarProductos(); }
-            } catch (error) { console.error('Error guardando producto:', error); }
-        }
+        // Mostrar usuario logueado
+        const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        document.getElementById('userName').innerText = userData.nombreCompleto || userData.username;
+        document.getElementById('userRolBadge').innerText = userData.rol || '';
+        document.getElementById('userRolText').innerHTML = `<strong>Rol:</strong> ${userData.rol || ''}`;
 
-        async function eliminarProducto(id) {
-            if (confirm('¿Está seguro de eliminar este producto?')) {
-                try { const response = await fetch(`${API_BASE_URL}/productos/${id}`, { method: 'DELETE', headers: getHeaders() }); if (response.ok) cargarProductos(); }
-                catch (error) { console.error('Error eliminando producto:', error); }
-            }
-        }
-
-        async function cargarCategoriasSelect() {
-            await cargarCategorias();
-            const select = document.getElementById('categoriaId');
-            select.innerHTML = '<option value="">Seleccione...</option>';
-            categoriasData.forEach(cat => { select.innerHTML += `<option value="${cat.idCategoria}">${cat.nombre}</option>`; });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('authToken'); const user = localStorage.getItem('currentUser');
-            if (!token || !user) { window.location.href = 'login.html'; return; }
-            const userData = JSON.parse(user);
-            document.getElementById('userName').innerText = userData.nombreCompleto || userData.username;
-            document.getElementById('userRol').innerText = userData.rol || '';
-            if (userData.rol === 'ADMIN' || userData.rol === 'BODEGA') { document.getElementById('btnNuevoProducto').style.display = 'block'; document.getElementById('thAcciones').style.display = 'table-cell'; }
-            else { document.getElementById('btnNuevoProducto').style.display = 'none'; document.getElementById('thAcciones').style.display = 'none'; }
-            cargarCategoriasSelect(); cargarProductos();
-            document.getElementById('btnLogout').addEventListener('click', function(e) { e.preventDefault(); localStorage.removeItem('authToken'); localStorage.removeItem('currentUser'); window.location.href = 'login.html'; });
-            const sidebarToggle = document.getElementById('sidebarToggle'); if (sidebarToggle) sidebarToggle.addEventListener('click', () => document.body.classList.toggle('sb-sidenav-toggled'));
+        // Logout
+        document.getElementById('btnLogout').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
         });
     </script>
 </body>

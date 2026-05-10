@@ -1,7 +1,199 @@
-// Página de Login
+// ============================================
+// auth.js - Autenticación Papelería App
+// ============================================
+
+const API_BASE_URL = 'http://localhost:8085/api';
+
+// ============================================
+// FUNCIONES DE AUTENTICACIÓN
+// ============================================
+
+async function login(username, password) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.status === 403 && data.requiresTwoFactor) {
+            return { requiresTwoFactor: true, username: data.username };
+        }
+        
+        if (response.ok && data.accessToken) {
+            localStorage.setItem('authToken', data.accessToken);
+            localStorage.setItem('currentUser', JSON.stringify({
+                username: data.username,
+                rol: data.rol,
+                nombreCompleto: data.nombreCompleto
+            }));
+            return { success: true, data: data };
+        }
+        
+        return { error: data.error || 'Credenciales inválidas' };
+    } catch (error) {
+        console.error('Error en login:', error);
+        return { error: 'Error de conexión con el servidor' };
+    }
+}
+
+async function loginWith2FA(username, code) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/login/2fa`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, code })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.accessToken) {
+            localStorage.setItem('authToken', data.accessToken);
+            localStorage.setItem('currentUser', JSON.stringify({
+                username: data.username,
+                rol: data.rol,
+                nombreCompleto: data.nombreCompleto
+            }));
+            return { success: true, data: data };
+        }
+        
+        return { error: data.error || 'Código 2FA inválido' };
+    } catch (error) {
+        console.error('Error en login 2FA:', error);
+        return { error: 'Error de conexión' };
+    }
+}
+
+async function register(userData) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            return { success: true, message: data.message };
+        } else {
+            return { error: data.error || 'Error en el registro' };
+        }
+    } catch (error) {
+        console.error('Error en registro:', error);
+        return { error: 'Error de conexión con el servidor' };
+    }
+}
+
+async function forgotPassword(email) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            return { success: true, message: data.message };
+        } else {
+            return { error: data.error || 'Error al enviar el correo' };
+        }
+    } catch (error) {
+        console.error('Error en forgot password:', error);
+        return { error: 'Error de conexión con el servidor' };
+    }
+}
+
+async function resetPassword(token, newPassword) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, newPassword })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            return { success: true, message: data.message };
+        } else {
+            return { error: data.error || 'Error al restablecer la contraseña' };
+        }
+    } catch (error) {
+        console.error('Error en reset password:', error);
+        return { error: 'Error de conexión con el servidor' };
+    }
+}
+
+async function changePassword(oldPassword, newPassword) {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        return { error: 'No hay sesión activa' };
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/cambiar-contrasena`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ oldPassword, newPassword })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            return { success: true, message: data.message };
+        } else {
+            return { error: data.error || 'Error al cambiar la contraseña' };
+        }
+    } catch (error) {
+        console.error('Error en change password:', error);
+        return { error: 'Error de conexión con el servidor' };
+    }
+}
+
+function logout() {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('currentUser');
+    window.location.href = 'login.html';
+}
+
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    
+    const wrapper = input.parentElement;
+    const button = wrapper.querySelector('.password-toggle');
+    const icon = button ? button.querySelector('i') : null;
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        if (icon) {
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        }
+    } else {
+        input.type = 'password';
+        if (icon) {
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+}
+
+// ============================================
+// PÁGINA DE LOGIN
+// ============================================
 if (document.getElementById('loginForm')) {
     const loginForm = document.getElementById('loginForm');
     let pendingUsername = null;
+    const btnLogin = document.getElementById('btnLogin');
     
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -14,104 +206,237 @@ if (document.getElementById('loginForm')) {
         const alert2FA = document.getElementById('alert2FA');
         const twoFactorDiv = document.getElementById('twoFactorDiv');
         
-        alertError.style.display = 'none';
-        alert2FA.style.display = 'none';
+        if (alertError) alertError.style.display = 'none';
+        if (alert2FA) alert2FA.style.display = 'none';
         
-        if (twoFactorDiv.style.display === 'block' && pendingUsername) {
+        if (!username || !password) {
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Por favor ingrese usuario y contraseña';
+                alertError.style.display = 'block';
+            }
+            return;
+        }
+        
+        if (twoFactorDiv && twoFactorDiv.style.display === 'block' && pendingUsername) {
+            if (!twoFactorCode) {
+                if (alertError) {
+                    alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Por favor ingrese el código 2FA';
+                    alertError.style.display = 'block';
+                }
+                return;
+            }
+            
+            if (btnLogin) {
+                btnLogin.disabled = true;
+                btnLogin.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Verificando...';
+            }
+            
             const result = await loginWith2FA(pendingUsername, twoFactorCode);
+            
             if (result.success) {
                 window.location.href = 'index.html';
             } else {
-                alertError.innerText = result.error;
-                alertError.style.display = 'block';
+                if (alertError) {
+                    alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> ' + result.error;
+                    alertError.style.display = 'block';
+                }
+                if (btnLogin) {
+                    btnLogin.disabled = false;
+                    btnLogin.innerHTML = 'Verificar Código 2FA';
+                }
             }
         } else {
+            if (btnLogin) {
+                btnLogin.disabled = true;
+                btnLogin.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Ingresando...';
+            }
+            
             const result = await login(username, password);
             
             if (result.requiresTwoFactor) {
                 pendingUsername = result.username;
-                twoFactorDiv.style.display = 'block';
-                alert2FA.innerText = 'Se requiere código de autenticación de dos factores';
-                alert2FA.style.display = 'block';
-                document.getElementById('btnLogin').innerText = 'Verificar Código 2FA';
+                if (twoFactorDiv) twoFactorDiv.style.display = 'block';
+                if (alert2FA) {
+                    alert2FA.innerHTML = '<i class="fas fa-shield-alt me-2"></i> Se requiere código de autenticación de dos factores';
+                    alert2FA.style.display = 'block';
+                }
+                if (btnLogin) {
+                    btnLogin.disabled = false;
+                    btnLogin.innerHTML = 'Verificar Código 2FA';
+                }
             } else if (result.success) {
                 window.location.href = 'index.html';
             } else {
-                alertError.innerText = result.error;
-                alertError.style.display = 'block';
+                if (alertError) {
+                    alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> ' + result.error;
+                    alertError.style.display = 'block';
+                }
+                if (btnLogin) {
+                    btnLogin.disabled = false;
+                    btnLogin.innerHTML = 'Iniciar Sesión';
+                }
             }
         }
     });
 }
 
-// Página de Registro
+// ============================================
+// PÁGINA DE REGISTRO
+// ============================================
 if (document.getElementById('registerForm')) {
     const registerForm = document.getElementById('registerForm');
     const alertError = document.getElementById('alertError');
     const alertSuccess = document.getElementById('alertSuccess');
+    const btnRegister = document.getElementById('btnRegister');
     
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
+        const email = document.getElementById('email').value;
+        const nombreCompleto = document.getElementById('nombreCompleto').value;
+        
+        if (alertError) alertError.style.display = 'none';
+        if (alertSuccess) alertSuccess.style.display = 'none';
+        
+        if (!username || !password || !email || !nombreCompleto) {
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Por favor complete todos los campos obligatorios';
+                alertError.style.display = 'block';
+            }
+            return;
+        }
         
         if (password !== confirmPassword) {
-            alertError.innerText = 'Las contraseñas no coinciden';
-            alertError.style.display = 'block';
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Las contraseñas no coinciden';
+                alertError.style.display = 'block';
+            }
+            return;
+        }
+        
+        if (password.length < 8) {
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> La contraseña debe tener al menos 8 caracteres';
+                alertError.style.display = 'block';
+            }
+            return;
+        }
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Ingrese un correo electrónico válido';
+                alertError.style.display = 'block';
+            }
             return;
         }
         
         const userData = {
-            username: document.getElementById('username').value,
+            username: username,
             password: password,
-            email: document.getElementById('email').value,
-            nombreCompleto: document.getElementById('nombreCompleto').value,
+            email: email,
+            nombreCompleto: nombreCompleto,
             telefonoMovil: document.getElementById('telefonoMovil').value
         };
+        
+        if (btnRegister) {
+            btnRegister.disabled = true;
+            btnRegister.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Registrando...';
+        }
         
         const result = await register(userData);
         
         if (result.success) {
-            alertSuccess.innerText = result.message;
-            alertSuccess.style.display = 'block';
+            if (alertSuccess) {
+                alertSuccess.innerHTML = '<i class="fas fa-check-circle me-2"></i> ' + result.message;
+                alertSuccess.style.display = 'block';
+            }
             setTimeout(() => {
                 window.location.href = 'login.html';
             }, 3000);
         } else {
-            alertError.innerText = result.error;
-            alertError.style.display = 'block';
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> ' + result.error;
+                alertError.style.display = 'block';
+            }
+            if (btnRegister) {
+                btnRegister.disabled = false;
+                btnRegister.innerHTML = 'Registrarse';
+            }
         }
     });
 }
 
-// Página de Recuperación de Contraseña
+// ============================================
+// PÁGINA DE RECUPERACIÓN DE CONTRASEÑA
+// ============================================
 if (document.getElementById('forgotForm')) {
     const forgotForm = document.getElementById('forgotForm');
     const alertError = document.getElementById('alertError');
     const alertSuccess = document.getElementById('alertSuccess');
+    const btnSend = document.getElementById('btnSend');
     
     forgotForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const email = document.getElementById('email').value;
+        
+        if (alertError) alertError.style.display = 'none';
+        if (alertSuccess) alertSuccess.style.display = 'none';
+        
+        if (!email) {
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Por favor ingrese su correo electrónico';
+                alertError.style.display = 'block';
+            }
+            return;
+        }
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Ingrese un correo electrónico válido';
+                alertError.style.display = 'block';
+            }
+            return;
+        }
+        
+        if (btnSend) {
+            btnSend.disabled = true;
+            btnSend.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Enviando...';
+        }
+        
         const result = await forgotPassword(email);
         
         if (result.success) {
-            alertSuccess.innerText = result.message;
-            alertSuccess.style.display = 'block';
+            if (alertSuccess) {
+                alertSuccess.innerHTML = '<i class="fas fa-check-circle me-2"></i> ' + result.message;
+                alertSuccess.style.display = 'block';
+            }
         } else {
-            alertError.innerText = result.error;
-            alertError.style.display = 'block';
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> ' + result.error;
+                alertError.style.display = 'block';
+            }
+            if (btnSend) {
+                btnSend.disabled = false;
+                btnSend.innerHTML = 'Enviar Enlace';
+            }
         }
     });
 }
 
-// Página de Restablecer Contraseña
+// ============================================
+// PÁGINA DE RESTABLECER CONTRASEÑA
+// ============================================
 if (document.getElementById('resetForm')) {
     const resetForm = document.getElementById('resetForm');
     const alertError = document.getElementById('alertError');
     const alertSuccess = document.getElementById('alertSuccess');
+    const btnReset = document.getElementById('btnReset');
     
     resetForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -119,9 +444,30 @@ if (document.getElementById('resetForm')) {
         const newPassword = document.getElementById('newPassword').value;
         const confirmPassword = document.getElementById('confirmPassword').value;
         
+        if (alertError) alertError.style.display = 'none';
+        if (alertSuccess) alertSuccess.style.display = 'none';
+        
+        if (!newPassword || !confirmPassword) {
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Por favor complete ambos campos';
+                alertError.style.display = 'block';
+            }
+            return;
+        }
+        
         if (newPassword !== confirmPassword) {
-            alertError.innerText = 'Las contraseñas no coinciden';
-            alertError.style.display = 'block';
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Las contraseñas no coinciden';
+                alertError.style.display = 'block';
+            }
+            return;
+        }
+        
+        if (newPassword.length < 8) {
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> La contraseña debe tener al menos 8 caracteres';
+                alertError.style.display = 'block';
+            }
             return;
         }
         
@@ -129,30 +475,53 @@ if (document.getElementById('resetForm')) {
         const token = urlParams.get('token');
         
         if (!token) {
-            alertError.innerText = 'Token de recuperación no encontrado';
-            alertError.style.display = 'block';
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> Token de recuperación no encontrado';
+                alertError.style.display = 'block';
+            }
             return;
+        }
+        
+        if (btnReset) {
+            btnReset.disabled = true;
+            btnReset.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Restableciendo...';
         }
         
         const result = await resetPassword(token, newPassword);
         
         if (result.success) {
-            alertSuccess.innerText = result.message;
-            alertSuccess.style.display = 'block';
+            if (alertSuccess) {
+                alertSuccess.innerHTML = '<i class="fas fa-check-circle me-2"></i> ' + result.message;
+                alertSuccess.style.display = 'block';
+            }
             setTimeout(() => {
                 window.location.href = 'login.html';
             }, 3000);
         } else {
-            alertError.innerText = result.error;
-            alertError.style.display = 'block';
+            if (alertError) {
+                alertError.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i> ' + result.error;
+                alertError.style.display = 'block';
+            }
+            if (btnReset) {
+                btnReset.disabled = false;
+                btnReset.innerHTML = 'Restablecer Contraseña';
+            }
         }
     });
 }
 
-// Cerrar sesión
+// ============================================
+// CIERRE DE SESIÓN
+// ============================================
 if (document.getElementById('btnLogout')) {
     document.getElementById('btnLogout').addEventListener('click', (e) => {
         e.preventDefault();
         logout();
     });
 }
+
+// ============================================
+// FUNCIÓN PARA MOSTRAR/OCULTAR CONTRASEÑA
+// (Disponible globalmente para ser usada desde HTML)
+// ============================================
+window.togglePassword = togglePassword;

@@ -1,7 +1,11 @@
 package com.papeleria.security.controller;
 
 import com.papeleria.entity.Usuario;
+import com.papeleria.entity.RolUsuario;
+import com.papeleria.entity.EstadoUsuario;
 import com.papeleria.repository.UsuarioRepository;
+import com.papeleria.repository.RolUsuarioRepository;
+import com.papeleria.repository.EstadoUsuarioRepository;
 import com.papeleria.security.jwt.JwtTokenProvider;
 import com.papeleria.security.model.AuthRequest;
 import com.papeleria.security.model.AuthResponse;
@@ -32,6 +36,12 @@ public class AuthController {
     
     @Autowired
     private UsuarioRepository usuarioRepository;
+    
+    @Autowired
+    private RolUsuarioRepository rolUsuarioRepository;
+    
+    @Autowired
+    private EstadoUsuarioRepository estadoUsuarioRepository;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -94,11 +104,11 @@ public class AuthController {
             System.out.println("Autenticacion EXITOSA");
             SecurityContextHolder.getContext().setAuthentication(authentication);
             
-            if (usuario != null && usuario.getTwoFactorEnabled()) {
+            if (usuario != null && usuario.getTwoFactorEnabled() != null && usuario.getTwoFactorEnabled()) {
                 Map<String, Object> response = new HashMap<>();
                 response.put("requiresTwoFactor", true);
                 response.put("message", "Se requiere codigo de autenticacion de dos factores");
-                response.put("username", usuario.getUsername());
+                response.put("username", usuario.getNombreUsuario());
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
             }
             
@@ -202,6 +212,100 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Error al cambiar contrasena"));
+        }
+    }
+    
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@Valid @RequestBody Map<String, String> registerRequest) {
+        
+        System.out.println("========================================");
+        System.out.println("INTENTO DE REGISTRO");
+        System.out.println("Username: " + registerRequest.get("username"));
+        System.out.println("Email: " + registerRequest.get("email"));
+        System.out.println("========================================");
+        
+        try {
+            String username = registerRequest.get("username");
+            String password = registerRequest.get("password");
+            String email = registerRequest.get("email");
+            String nombreCompleto = registerRequest.get("nombreCompleto");
+            String telefonoMovil = registerRequest.get("telefonoMovil");
+            
+            if (username == null || username.trim().isEmpty()) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "El nombre de usuario es obligatorio");
+                return ResponseEntity.badRequest().body(error);
+            }
+            
+            if (password == null || password.trim().isEmpty()) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "La contrasena es obligatoria");
+                return ResponseEntity.badRequest().body(error);
+            }
+            
+            if (email == null || email.trim().isEmpty()) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "El correo electronico es obligatorio");
+                return ResponseEntity.badRequest().body(error);
+            }
+            
+            if (nombreCompleto == null || nombreCompleto.trim().isEmpty()) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "El nombre completo es obligatorio");
+                return ResponseEntity.badRequest().body(error);
+            }
+            
+            if (usuarioRepository.existsByNombreUsuario(username)) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "El nombre de usuario ya existe");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+            }
+            
+            if (usuarioRepository.existsByEmail(email)) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "El correo electronico ya esta registrado");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+            }
+            
+            RolUsuario rolVendedor = rolUsuarioRepository.findById(2)
+                .orElseThrow(() -> new RuntimeException("No se encontro el rol VENDEDOR"));
+            
+            EstadoUsuario estadoActivo = estadoUsuarioRepository.findById(1)
+                .orElseThrow(() -> new RuntimeException("No se encontro el estado ACTIVO"));
+            
+            Usuario nuevoUsuario = new Usuario();
+            nuevoUsuario.setNombreUsuario(username);
+            nuevoUsuario.setContrasenaHash(passwordEncoder.encode(password));
+            nuevoUsuario.setEmail(email);
+            nuevoUsuario.setNombreCompleto(nombreCompleto);
+            nuevoUsuario.setTelefonoMovil(telefonoMovil != null ? telefonoMovil : "");
+            nuevoUsuario.setRol(rolVendedor);
+            nuevoUsuario.setEstado(estadoActivo);
+            nuevoUsuario.setEmailVerificado(true);
+            nuevoUsuario.setCuentaBloqueada(false);
+            nuevoUsuario.setIntentosFallidos(0);
+            nuevoUsuario.setFechaCreacion(LocalDateTime.now());
+            
+            Usuario usuarioGuardado = usuarioRepository.save(nuevoUsuario);
+            
+            System.out.println("REGISTRO EXITOSO - Usuario creado con ID: " + usuarioGuardado.getIdUsuario());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Usuario registrado exitosamente");
+            response.put("username", usuarioGuardado.getNombreUsuario());
+            response.put("email", usuarioGuardado.getEmail());
+            response.put("rol", rolVendedor.getNombre());
+            response.put("estado", estadoActivo.getNombre());
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            
+        } catch (Exception e) {
+            System.out.println("ERROR EN REGISTRO: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Error al registrar usuario: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 }

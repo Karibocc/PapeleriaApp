@@ -5,103 +5,162 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>Clientes - Papelería App</title>
     <link href="css/styles.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <link href="https://use.fontawesome.com/releases/v6.3.0/css/all.css" rel="stylesheet" />
 </head>
-<body class="sb-nav-fixed">
-    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+<body>
+    <!-- Barra de navegación superior moderna -->
+    <nav class="navbar-modern navbar navbar-expand navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="index.html">Papelería App</a>
-            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle"><i class="fas fa-bars"></i></button>
-            <div class="ms-auto">
-                <span class="text-white me-3" id="userName">Usuario</span>
-                <span class="badge bg-primary" id="userRol"></span>
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-store"></i> Papelería App
+            </a>
+            <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="ms-auto d-flex align-items-center">
+                <div class="dropdown me-3 user-dropdown">
+                    <button class="dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle me-1"></i>
+                        <span id="userName">Usuario</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><span class="dropdown-item-text" id="userRolText"></span></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" id="btnLogout">
+                            <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                        </a></li>
+                    </ul>
+                </div>
+                <span class="badge badge-role" id="userRolBadge"></span>
             </div>
         </div>
     </nav>
-    <div id="layoutSidenav">
-        <div id="layoutSidenav_nav">
-            <nav class="sb-sidenav accordion sb-sidenav-dark">
-                <div class="sb-sidenav-menu">
-                    <div class="nav">
-                        <div class="sb-sidenav-menu-heading">Módulos</div>
-                        <a class="nav-link" href="index.html"><div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>Dashboard</a>
-                        <a class="nav-link" href="productos.html"><div class="sb-nav-link-icon"><i class="fas fa-box"></i></div>Productos</a>
-                        <a class="nav-link active" href="clientes.html"><div class="sb-nav-link-icon"><i class="fas fa-users"></i></div>Clientes</a>
-                        <a class="nav-link" href="proveedores.html"><div class="sb-nav-link-icon"><i class="fas fa-truck"></i></div>Proveedores</a>
-                        <a class="nav-link" href="ventas.html"><div class="sb-nav-link-icon"><i class="fas fa-shopping-cart"></i></div>Ventas</a>
-                        <a class="nav-link" href="compras.html"><div class="sb-nav-link-icon"><i class="fas fa-dolly"></i></div>Compras</a>
-                        <a class="nav-link" href="reportes.html"><div class="sb-nav-link-icon"><i class="fas fa-chart-bar"></i></div>Reportes</a>
-                        <a class="nav-link" href="configuracion.html"><div class="sb-nav-link-icon"><i class="fas fa-cog"></i></div>Configuración</a>
-                        <a class="nav-link" href="usuarios.html"><div class="sb-nav-link-icon"><i class="fas fa-user-shield"></i></div>Usuarios</a>
-                        <div class="sb-sidenav-menu-heading">Opciones</div>
-                        <a class="nav-link" href="#" id="btnLogout"><div class="sb-nav-link-icon"><i class="fas fa-sign-out-alt"></i></div>Cerrar Sesión</a>
-                    </div>
-                </div>
-                <div class="sb-sidenav-footer">Papelería App</div>
-            </nav>
-        </div>
-        <div id="layoutSidenav_content">
-            <main>
-                <div class="container-fluid px-4">
-                    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
-                        <h1>Clientes</h1>
-                        <div>
-                            <span class="me-3">Total Clientes: <strong id="totalClientes">0</strong></span>
-                            <button class="btn btn-primary" id="btnNuevoCliente" data-bs-toggle="modal" data-bs-target="#clienteModal" onclick="limpiarFormularioCliente()" style="display: none;"><i class="fas fa-plus"></i> Nuevo Cliente</button>
-                        </div>
-                    </div>
 
-                    <div class="row">
-                        <div class="col-lg-8">
-                            <div class="card mb-4">
-                                <div class="card-header"><i class="fas fa-table me-1"></i> Listado de Clientes</div>
-                                <div class="card-body">
-                                    <div class="mb-3">
-                                        <label>Mostrar registros: </label>
-                                        <select id="pageLength" class="form-select form-select-sm d-inline-block w-auto ms-2">
-                                            <option value="5">5</option>
-                                            <option value="10" selected>10</option>
-                                            <option value="25">25</option>
-                                            <option value="50">50</option>
-                                            <option value="100">100</option>
-                                        </select>
-                                    </div>
-                                    <table id="tablaClientes" class="table table-striped">
-                                        <thead>
-                                            <tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Dirección</th><th>Fecha Creación</th><th id="thAccionesClientes">Acciones</th></tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
+    <div class="d-flex">
+        <!-- Sidebar moderna -->
+        <div class="sidebar-modern" id="sidebar" style="width: 260px; min-height: calc(100vh - 60px);">
+            <div class="sidebar-heading">Módulos</div>
+            <nav class="nav flex-column">
+                <a class="nav-link" href="index.html">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a class="nav-link" href="productos.html">
+                    <i class="fas fa-box"></i> Productos
+                </a>
+                <a class="nav-link active" href="clientes.html">
+                    <i class="fas fa-users"></i> Clientes
+                </a>
+                <a class="nav-link" href="proveedores.html">
+                    <i class="fas fa-truck"></i> Proveedores
+                </a>
+                <a class="nav-link" href="ventas.html">
+                    <i class="fas fa-shopping-cart"></i> Ventas
+                </a>
+                <a class="nav-link" href="compras.html">
+                    <i class="fas fa-dolly"></i> Compras
+                </a>
+                <a class="nav-link" href="reportes.html">
+                    <i class="fas fa-chart-bar"></i> Reportes
+                </a>
+                <a class="nav-link" href="configuracion.html">
+                    <i class="fas fa-cog"></i> Configuración
+                </a>
+                <a class="nav-link" href="usuarios.html">
+                    <i class="fas fa-user-shield"></i> Usuarios
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <small>Sistema de Gestión</small><br>
+                <small>Papelería App v1.0</small>
+            </div>
+        </div>
+
+        <!-- Contenido principal -->
+        <div class="main-content flex-grow-1">
+            <div class="container-fluid px-4">
+                <div class="d-flex justify-content-between align-items-center mt-2 mb-4">
+                    <h1>Clientes</h1>
+                    <div>
+                        <span class="me-3">Total Clientes: <strong id="totalClientes">0</strong></span>
+                        <button class="btn btn-primary-custom" id="btnNuevoCliente" data-bs-toggle="modal" data-bs-target="#clienteModal" onclick="limpiarFormularioCliente()" style="display: none;">
+                            <i class="fas fa-plus"></i> Nuevo Cliente
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="chart-card card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-table me-1"></i> Listado de Clientes
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label>Mostrar registros: </label>
+                                    <select id="pageLength" class="form-select form-select-sm d-inline-block w-auto ms-2">
+                                        <option value="5">5</option>
+                                        <option value="10" selected>10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
                                 </div>
+                                <table id="tablaClientes" class="table table-striped">
+                                    <thead>
+                                        <tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Dirección</th><th>Fecha Creación</th><th id="thAccionesClientes">Acciones</th></tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
                             </div>
                         </div>
-                        <div class="col-lg-4">
-                            <div class="card mb-4">
-                                <div class="card-header"><i class="fas fa-chart-pie me-1"></i> Distribución de Clientes</div>
-                                <div class="card-body">
-                                    <canvas id="clientesChart" width="100%" height="200"></canvas>
-                                </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="chart-card card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-chart-pie me-1"></i> Distribución de Clientes
                             </div>
-                            <div class="card mb-4">
-                                <div class="card-header"><i class="fas fa-chart-line me-1"></i> Clientes registrados por mes</div>
-                                <div class="card-body">
-                                    <canvas id="clientesLineChart" width="100%" height="200"></canvas>
-                                </div>
+                            <div class="card-body">
+                                <canvas id="clientesChart" width="100%" height="200"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-chart-line me-1"></i> Clientes registrados por mes
+                            </div>
+                            <div class="card-body">
+                                <canvas id="clientesLineChart" width="100%" height="200"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
-            </main>
-            <footer class="py-4 bg-light mt-auto"><div class="container-fluid px-4"><div class="text-muted text-center">Copyright &copy; Papelería App 2026</div></div></footer>
+            </div>
+
+            <footer class="footer-modern">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">Copyright &copy; Papelería App 2026</div>
+                        <div>
+                            <a href="#">Política de Privacidad</a>
+                            <span class="mx-1">&middot;</span>
+                            <a href="#">Términos y Condiciones</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
         </div>
     </div>
 
+    <!-- Modal Cliente -->
     <div class="modal fade" id="clienteModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Cliente</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header">
+                    <h5 class="modal-title">Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body">
                     <input type="hidden" id="clienteId">
                     <div class="mb-3"><label>Nombre</label><input type="text" id="clienteNombre" class="form-control"></div>
@@ -109,7 +168,10 @@
                     <div class="mb-3"><label>Teléfono</label><input type="text" id="clienteTelefono" class="form-control"></div>
                     <div class="mb-3"><label>Dirección</label><textarea id="clienteDireccion" class="form-control"></textarea></div>
                 </div>
-                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="button" class="btn btn-primary" onclick="guardarCliente()">Guardar</button></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary-custom" onclick="guardarCliente()">Guardar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -120,189 +182,36 @@
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/api.js"></script>
-    <script src="js/role-permissions.js"></script>
+    <script src="js/clientes.js"></script>
     <script>
-        const API_BASE_URL = 'http://localhost:8085/api';
-        let tablaClientes = null;
-        let clientesPieChart = null;
-        let clientesLineChart = null;
-        let clientesData = [];
-
-        function getAuthToken() {
-            return localStorage.getItem('authToken');
-        }
-
-        function getHeaders() {
-            const token = getAuthToken();
-            return {
-                'Content-Type': 'application/json',
-                'Authorization': token ? `Bearer ${token}` : ''
-            };
-        }
-
-        async function cargarClientes() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/clientes`, { headers: getHeaders() });
-                if (response.ok) {
-                    clientesData = await response.json();
-                    document.getElementById('totalClientes').innerText = clientesData.length;
-                    actualizarTabla();
-                    actualizarGraficas();
-                }
-            } catch (error) {
-                console.error('Error cargando clientes:', error);
-            }
-        }
-
-        function actualizarTabla() {
-            const pageLength = parseInt(document.getElementById('pageLength').value);
-            
-            if (tablaClientes) {
-                tablaClientes.destroy();
-            }
-            
-            tablaClientes = $('#tablaClientes').DataTable({
-                data: clientesData,
-                pageLength: pageLength,
-                lengthMenu: [5, 10, 25, 50, 100],
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
-                },
-                columns: [
-                    { data: 'idCliente' },
-                    { data: 'nombre' },
-                    { data: 'correo', defaultContent: '-' },
-                    { data: 'telefono', defaultContent: '-' },
-                    { data: 'direccion', defaultContent: '-' },
-                    { data: 'fechaCreacion', render: data => data ? new Date(data).toLocaleDateString() : '-' },
-                    { data: null, orderable: false, visible: document.getElementById('thAccionesClientes').style.display !== 'none',
-                      render: (data) => `<button class="btn btn-sm btn-warning" onclick="editarCliente(${data.idCliente})"><i class="fas fa-edit"></i></button>
-                                        <button class="btn btn-sm btn-danger" onclick="eliminarCliente(${data.idCliente})"><i class="fas fa-trash"></i></button>` }
-                ]
-            });
-        }
-
-        function actualizarGraficas() {
-            const clientesPorMes = {};
-            const hoy = new Date();
-            
-            clientesData.forEach(cliente => {
-                if (cliente.fechaCreacion) {
-                    const fecha = new Date(cliente.fechaCreacion);
-                    const mesKey = `${fecha.getFullYear()}-${fecha.getMonth() + 1}`;
-                    clientesPorMes[mesKey] = (clientesPorMes[mesKey] || 0) + 1;
-                }
-            });
-            
-            const meses = Object.keys(clientesPorMes).sort();
-            const cantidades = meses.map(m => clientesPorMes[m]);
-            
-            const ctxPie = document.getElementById('clientesChart').getContext('2d');
-            if (clientesPieChart) clientesPieChart.destroy();
-            clientesPieChart = new Chart(ctxPie, {
-                type: 'pie',
-                data: {
-                    labels: ['Clientes registrados'],
-                    datasets: [{ data: [clientesData.length], backgroundColor: ['#4e73df'] }]
-                },
-                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
-            });
-            
-            const ctxLine = document.getElementById('clientesLineChart').getContext('2d');
-            if (clientesLineChart) clientesLineChart.destroy();
-            clientesLineChart = new Chart(ctxLine, {
-                type: 'line',
-                data: {
-                    labels: meses,
-                    datasets: [{ label: 'Clientes registrados', data: cantidades, borderColor: '#4e73df', fill: true }]
-                },
-                options: { responsive: true, maintainAspectRatio: true }
-            });
-        }
-
-        document.getElementById('pageLength').addEventListener('change', () => actualizarTabla());
-
-        function limpiarFormularioCliente() {
-            document.getElementById('clienteId').value = '';
-            document.getElementById('clienteNombre').value = '';
-            document.getElementById('clienteCorreo').value = '';
-            document.getElementById('clienteTelefono').value = '';
-            document.getElementById('clienteDireccion').value = '';
-        }
-
-        async function editarCliente(id) {
-            const cliente = clientesData.find(c => c.idCliente === id);
-            if (cliente) {
-                document.getElementById('clienteId').value = cliente.idCliente;
-                document.getElementById('clienteNombre').value = cliente.nombre;
-                document.getElementById('clienteCorreo').value = cliente.correo || '';
-                document.getElementById('clienteTelefono').value = cliente.telefono || '';
-                document.getElementById('clienteDireccion').value = cliente.direccion || '';
-                new bootstrap.Modal(document.getElementById('clienteModal')).show();
-            }
-        }
-
-        async function guardarCliente() {
-            const cliente = {
-                idCliente: document.getElementById('clienteId').value || null,
-                nombre: document.getElementById('clienteNombre').value,
-                correo: document.getElementById('clienteCorreo').value,
-                telefono: document.getElementById('clienteTelefono').value,
-                direccion: document.getElementById('clienteDireccion').value
-            };
-            
-            try {
-                const url = cliente.idCliente ? `${API_BASE_URL}/clientes/${cliente.idCliente}` : `${API_BASE_URL}/clientes`;
-                const method = cliente.idCliente ? 'PUT' : 'POST';
-                const response = await fetch(url, { method, headers: getHeaders(), body: JSON.stringify(cliente) });
-                if (response.ok) {
-                    bootstrap.Modal.getInstance(document.getElementById('clienteModal')).hide();
-                    cargarClientes();
-                }
-            } catch (error) {
-                console.error('Error guardando cliente:', error);
-            }
-        }
-
-        async function eliminarCliente(id) {
-            if (confirm('¿Está seguro de eliminar este cliente?')) {
-                try {
-                    const response = await fetch(`${API_BASE_URL}/clientes/${id}`, { method: 'DELETE', headers: getHeaders() });
-                    if (response.ok) cargarClientes();
-                } catch (error) {
-                    console.error('Error eliminando cliente:', error);
-                }
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const token = localStorage.getItem('authToken');
-            const user = localStorage.getItem('currentUser');
-            if (!token || !user) { window.location.href = 'login.html'; return; }
-            
-            const userData = JSON.parse(user);
-            document.getElementById('userName').innerText = userData.nombreCompleto || userData.username;
-            document.getElementById('userRol').innerText = userData.rol || '';
-            
-            if (userData.rol === 'ADMIN') {
-                document.getElementById('btnNuevoCliente').style.display = 'block';
-                document.getElementById('thAccionesClientes').style.display = 'table-cell';
+        // Toggle sidebar
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar.style.width === '260px') {
+                sidebar.style.width = '70px';
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'none');
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'none');
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '0');
             } else {
-                document.getElementById('btnNuevoCliente').style.display = 'none';
-                document.getElementById('thAccionesClientes').style.display = 'none';
+                sidebar.style.width = '260px';
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'inline');
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'block');
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '12px');
             }
-            
-            cargarClientes();
-            
-            document.getElementById('btnLogout').addEventListener('click', function(e) {
-                e.preventDefault();
-                localStorage.removeItem('authToken');
-                localStorage.removeItem('currentUser');
-                window.location.href = 'login.html';
-            });
-            
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            if (sidebarToggle) sidebarToggle.addEventListener('click', () => document.body.classList.toggle('sb-sidenav-toggled'));
+        });
+
+        // Mostrar usuario logueado
+        const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        document.getElementById('userName').innerText = userData.nombreCompleto || userData.username;
+        document.getElementById('userRolBadge').innerText = userData.rol || '';
+        document.getElementById('userRolText').innerHTML = `<strong>Rol:</strong> ${userData.rol || ''}`;
+
+        // Logout
+        document.getElementById('btnLogout').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
         });
     </script>
 </body>

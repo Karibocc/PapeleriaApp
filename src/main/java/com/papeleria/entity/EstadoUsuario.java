@@ -1,5 +1,6 @@
 package com.papeleria.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.persistence.*;
 import java.util.List;
 
@@ -14,6 +15,7 @@ public class EstadoUsuario {
     private String nombre;
 
     @OneToMany(mappedBy = "estado")
+    @JsonIgnore
     private List<Usuario> usuarios;
 
     public EstadoUsuario() {}

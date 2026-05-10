@@ -52,6 +52,7 @@ com\papeleria\repository\TipoMovimientoRepository.class
 com\papeleria\dto\VentaRequestDTO$DetalleDTO.class
 com\papeleria\entity\MetodoPago.class
 com\papeleria\repository\ProductoRepository.class
+com\papeleria\repository\EstadoUsuarioRepository.class
 com\papeleria\accounting\ReporteContableService.class
 com\papeleria\devices\BarcodePrinterAdapter.class
 com\papeleria\patterns\behavioral\strategy\ImpuestoStrategy.class
@@ -72,6 +73,7 @@ com\papeleria\service\patterns\adapter\WhatsAppFacturaAdapter.class
 com\papeleria\devices\BarcodeReaderAdapter.class
 com\papeleria\security\controller\AuthController.class
 com\papeleria\repository\MetodoPagoRepository.class
+com\papeleria\repository\RolUsuarioRepository.class
 com\papeleria\service\ProductoService.class
 com\papeleria\controller\CompraController.class
 com\papeleria\exception\GlobalExceptionHandler.class

@@ -1,5 +1,6 @@
 package com.papeleria.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -10,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 @Entity
 @Table(name = "usuario")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Usuario implements UserDetails {
     
     @Id
@@ -24,6 +26,7 @@ public class Usuario implements UserDetails {
 
     @ManyToOne
     @JoinColumn(name = "id_rol", nullable = false)
+    @JsonIgnoreProperties("usuarios")
     private RolUsuario rol;
 
     @Column(name = "nombre_completo", nullable = false, length = 200)
@@ -31,6 +34,7 @@ public class Usuario implements UserDetails {
 
     @ManyToOne
     @JoinColumn(name = "id_estado_usuario", nullable = false)
+    @JsonIgnoreProperties("usuarios")
     private EstadoUsuario estado;
 
     @Column(name = "fecha_creacion", updatable = false)
@@ -55,7 +59,7 @@ public class Usuario implements UserDetails {
     private LocalDateTime tokenExpiracion;
     
     @Column(name = "email_verificado")
-    private Boolean emailVerificado = false;
+    private Boolean emailVerificado = true;
     
     @Column(name = "token_verificacion")
     private String tokenVerificacion;
@@ -100,7 +104,7 @@ public class Usuario implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return !cuentaBloqueada;
+        return cuentaBloqueada != null ? !cuentaBloqueada : true;
     }
 
     @Override
@@ -110,9 +114,13 @@ public class Usuario implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return estado.getNombre().equals("activo") && !cuentaBloqueada && emailVerificado;
+        boolean estadoActivo = estado != null && "activo".equals(estado.getNombre());
+        boolean noBloqueado = cuentaBloqueada != null ? !cuentaBloqueada : true;
+        boolean emailVerif = emailVerificado != null ? emailVerificado : false;
+        return estadoActivo && noBloqueado && emailVerif;
     }
 
+    // Getters y Setters
     public Integer getIdUsuario() { return idUsuario; }
     public void setIdUsuario(Integer idUsuario) { this.idUsuario = idUsuario; }
     public String getNombreUsuario() { return nombreUsuario; }

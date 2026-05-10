@@ -21,7 +21,7 @@ function getAuthToken() {
 function getHeaders() {
     const token = getAuthToken();
     return {
-        'Content-Type': application/json,
+        'Content-Type': 'application/json',
         'Authorization': token ? `Bearer ${token}` : ''
     };
 }
@@ -33,10 +33,24 @@ function getHeaders() {
 function mostrarUsuarioLogueado() {
     const userStr = localStorage.getItem('currentUser');
     if (userStr) {
-        const userData = JSON.parse(userStr);
-        document.getElementById('userName').innerText = userData.nombreCompleto || userData.username;
-        document.getElementById('userRolBadge').innerText = userData.rol || '';
-        document.getElementById('userRolText').innerHTML = `<strong>Rol:</strong> ${userData.rol || ''}`;
+        try {
+            const userData = JSON.parse(userStr);
+            const userNameElement = document.getElementById('userName');
+            const userRolBadgeElement = document.getElementById('userRolBadge');
+            const userRolTextElement = document.getElementById('userRolText');
+            
+            if (userNameElement) {
+                userNameElement.innerText = userData.nombreCompleto || userData.username;
+            }
+            if (userRolBadgeElement) {
+                userRolBadgeElement.innerText = userData.rol || '';
+            }
+            if (userRolTextElement) {
+                userRolTextElement.innerHTML = `<strong>Rol:</strong> ${userData.rol || ''}`;
+            }
+        } catch (error) {
+            console.error('Error parsing user data:', error);
+        }
     }
 }
 
@@ -55,7 +69,10 @@ async function cargarProductos() {
         const response = await fetch(`${API_BASE_URL}/productos`, { headers: getHeaders() });
         if (response.ok) {
             const data = await response.json();
-            document.getElementById('totalProductos').innerText = data.length || 0;
+            const totalProductosElement = document.getElementById('totalProductos');
+            if (totalProductosElement) {
+                totalProductosElement.innerText = data.length || 0;
+            }
         }
     } catch (error) {
         console.error('Error cargando productos:', error);
@@ -67,7 +84,10 @@ async function cargarClientes() {
         const response = await fetch(`${API_BASE_URL}/clientes`, { headers: getHeaders() });
         if (response.ok) {
             const data = await response.json();
-            document.getElementById('totalClientes').innerText = data.length || 0;
+            const totalClientesElement = document.getElementById('totalClientes');
+            if (totalClientesElement) {
+                totalClientesElement.innerText = data.length || 0;
+            }
         }
     } catch (error) {
         console.error('Error cargando clientes:', error);
@@ -84,7 +104,10 @@ async function cargarVentasMes() {
         if (response.ok) {
             const data = await response.json();
             const total = data.reduce((sum, item) => sum + (item.totalIngresos || 0), 0);
-            document.getElementById('ventasMes').innerText = `$${total.toFixed(2)}`;
+            const ventasMesElement = document.getElementById('ventasMes');
+            if (ventasMesElement) {
+                ventasMesElement.innerText = `$${total.toFixed(2)}`;
+            }
         }
     } catch (error) {
         console.error('Error cargando ventas del mes:', error);
@@ -97,13 +120,22 @@ async function cargarStockBajo() {
         if (response.ok) {
             const productos = await response.json();
             const stockBajo = productos.filter(p => p.stockActual <= p.stockMinimo);
-            document.getElementById('stockBajo').innerText = stockBajo.length || 0;
+            const stockBajoElement = document.getElementById('stockBajo');
+            if (stockBajoElement) {
+                stockBajoElement.innerText = stockBajo.length || 0;
+            }
             
-            const tbody = document.querySelector('#tablaStockBajo tbody');
-            tbody.innerHTML = '';
-            stockBajo.slice(0, 5).forEach(p => {
-                tbody.innerHTML += `<tr><td>${p.nombre}</td><td>${p.stockActual}</td><td>${p.stockMinimo}</td></tr>`;
-            });
+            const tbody = document.getElementById('tablaStockBajoBody');
+            if (tbody) {
+                tbody.innerHTML = '';
+                stockBajo.slice(0, 10).forEach(p => {
+                    tbody.innerHTML += `</tr>
+                        <td>${p.nombre || ''}</td>
+                        <td>${p.stockActual || 0}</td>
+                        <td>${p.stockMinimo || 0}</td>
+                      表`;
+                });
+            }
         }
     } catch (error) {
         console.error('Error cargando stock bajo:', error);
@@ -127,30 +159,33 @@ async function cargarGraficoVentas() {
             const labels = data.map(item => item.fecha);
             const ingresos = data.map(item => item.totalIngresos || 0);
             
-            const ctx = document.getElementById('ventasChart').getContext('2d');
-            if (ventasChart) ventasChart.destroy();
-            
-            ventasChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Ingresos',
-                        data: ingresos,
-                        borderColor: '#4e73df',
-                        backgroundColor: 'rgba(78, 115, 223, 0.1)',
-                        fill: true,
-                        tension: 0.3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { position: 'top' }
+            const ctx = document.getElementById('ventasChart');
+            if (ctx) {
+                const context = ctx.getContext('2d');
+                if (ventasChart) ventasChart.destroy();
+                
+                ventasChart = new Chart(context, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Ingresos',
+                            data: ingresos,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'top' }
+                        }
                     }
-                }
-            });
+                });
+            }
         }
     } catch (error) {
         console.error('Error cargando gráfico de ventas:', error);
@@ -171,33 +206,41 @@ async function cargarTopProductos() {
             const labels = top5.map(item => item.nombre);
             const cantidades = top5.map(item => item.totalVendido);
             
-            const ctx = document.getElementById('topProductosChart').getContext('2d');
-            if (topProductosChart) topProductosChart.destroy();
-            
-            topProductosChart = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: cantidades,
-                        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { position: 'bottom' }
+            const ctx = document.getElementById('topProductosChart');
+            if (ctx) {
+                const context = ctx.getContext('2d');
+                if (topProductosChart) topProductosChart.destroy();
+                
+                topProductosChart = new Chart(context, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: cantidades,
+                            backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        }
                     }
-                }
-            });
+                });
+            }
             
             const lista = document.getElementById('topProductosLista');
-            lista.innerHTML = '<ul class="list-group">';
-            top5.forEach(p => {
-                lista.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">${p.nombre}<span class="badge bg-primary rounded-pill">${p.totalVendido} vendidos</span></li>`;
-            });
-            lista.innerHTML += '</ul>';
+            if (lista) {
+                lista.innerHTML = '<ul class="list-group">';
+                top5.forEach(p => {
+                    lista.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                        ${p.nombre || ''}
+                        <span class="badge bg-primary rounded-pill">${p.totalVendido || 0} vendidos</span>
+                    </li>`;
+                });
+                lista.innerHTML += '</ul>';
+            }
         }
     } catch (error) {
         console.error('Error cargando top productos:', error);
@@ -217,29 +260,32 @@ async function cargarUtilidad() {
             const labels = data.map(item => item.fecha);
             const utilidades = data.map(item => item.totalUtilidad || 0);
             
-            const ctx = document.getElementById('utilidadChart').getContext('2d');
-            if (utilidadChart) utilidadChart.destroy();
-            
-            utilidadChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Utilidad',
-                        data: utilidades,
-                        backgroundColor: '#1cc88a',
-                        borderColor: '#1cc88a',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { position: 'top' }
+            const ctx = document.getElementById('utilidadChart');
+            if (ctx) {
+                const context = ctx.getContext('2d');
+                if (utilidadChart) utilidadChart.destroy();
+                
+                utilidadChart = new Chart(context, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Utilidad',
+                            data: utilidades,
+                            backgroundColor: '#1cc88a',
+                            borderColor: '#1cc88a',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: { position: 'top' }
+                        }
                     }
-                }
-            });
+                });
+            }
         }
     } catch (error) {
         console.error('Error cargando utilidad:', error);
@@ -251,13 +297,17 @@ async function cargarUtilidad() {
 // ============================================
 
 async function cargarDashboard() {
-    await cargarProductos();
-    await cargarClientes();
-    await cargarVentasMes();
-    await cargarStockBajo();
-    await cargarGraficoVentas();
-    await cargarTopProductos();
-    await cargarUtilidad();
+    try {
+        await cargarProductos();
+        await cargarClientes();
+        await cargarVentasMes();
+        await cargarStockBajo();
+        await cargarGraficoVentas();
+        await cargarTopProductos();
+        await cargarUtilidad();
+    } catch (error) {
+        console.error('Error cargando dashboard:', error);
+    }
 }
 
 // ============================================
@@ -281,13 +331,6 @@ document.addEventListener('DOMContentLoaded', function() {
         btnLogout.addEventListener('click', function(e) {
             e.preventDefault();
             cerrarSesion();
-        });
-    }
-    
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', function() {
-            document.body.classList.toggle('sb-sidenav-toggled');
         });
     }
 });
