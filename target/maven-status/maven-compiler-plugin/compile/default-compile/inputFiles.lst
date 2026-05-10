@@ -84,6 +84,7 @@ F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\service\
 F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\controller\ClienteController.java
 F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\patterns\behavioral\strategy\DescuentoStrategy.java
 F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\repository\ConfiguracionRepository.java
+F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\controller\CategoriaController.java
 F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\repository\RolUsuarioRepository.java
 F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\entity\Venta.java
 F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\security\jwt\JwtTokenValidator.java

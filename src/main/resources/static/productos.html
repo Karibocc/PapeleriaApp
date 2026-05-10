@@ -11,7 +11,6 @@
     <link href="https://use.fontawesome.com/releases/v6.3.0/css/all.css" rel="stylesheet" />
 </head>
 <body>
-    <!-- Barra de navegación superior moderna -->
     <nav class="navbar-modern navbar navbar-expand navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="index.html">
@@ -40,7 +39,6 @@
     </nav>
 
     <div class="d-flex">
-        <!-- Sidebar moderna -->
         <div class="sidebar-modern" id="sidebar" style="width: 260px; min-height: calc(100vh - 60px);">
             <div class="sidebar-heading">Módulos</div>
             <nav class="nav flex-column">
@@ -78,14 +76,13 @@
             </div>
         </div>
 
-        <!-- Contenido principal -->
         <div class="main-content flex-grow-1">
             <div class="container-fluid px-4">
                 <div class="d-flex justify-content-between align-items-center mt-2 mb-4">
                     <h1>Productos</h1>
                     <div>
                         <span class="me-3">Total Productos: <strong id="totalProductos">0</strong></span>
-                        <button class="btn btn-primary-custom" id="btnNuevoProducto" data-bs-toggle="modal" data-bs-target="#productoModal" onclick="limpiarFormularioProducto()" style="display: none;">
+                        <button class="btn btn-primary-custom" id="btnNuevoProducto">
                             <i class="fas fa-plus"></i> Nuevo Producto
                         </button>
                     </div>
@@ -110,7 +107,15 @@
                                 </div>
                                 <table id="tablaProductos" class="table table-striped">
                                     <thead>
-                                        <tr><th>ID</th><th>Código</th><th>Nombre</th><th>Stock</th><th>Precio Venta</th><th>Estado</th><th id="thAcciones">Acciones</th></tr>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Código</th>
+                                            <th>Nombre</th>
+                                            <th>Stock</th>
+                                            <th>Precio Venta</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
                                     </thead>
                                     <tbody></tbody>
                                 </table>
@@ -134,7 +139,7 @@
                                 <div class="table-responsive">
                                     <table class="table table-stock table-sm">
                                         <thead>
-                                            <tr><th>Producto</th><th>Stock</th><th>Mínimo</th>
+                                            <tr><th>Producto</th><th>Stock</th><th>Mínimo</th></tr>
                                         </thead>
                                         <tbody id="tablaStockBajoBody"></tbody>
                                     </table>
@@ -160,34 +165,66 @@
         </div>
     </div>
 
-    <!-- Modal Producto -->
     <div class="modal fade" id="productoModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Producto</h5>
+                    <h5 class="modal-title" id="productoModalLabel">Producto</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="productoId">
-                    <div class="mb-3"><label>Código Barras</label><input type="text" id="codigoBarras" class="form-control"></div>
-                    <div class="mb-3"><label>Nombre</label><input type="text" id="nombre" class="form-control"></div>
-                    <div class="mb-3"><label>Descripción</label><textarea id="descripcion" class="form-control"></textarea></div>
-                    <div class="mb-3"><label>Categoría</label><select id="categoriaId" class="form-control"></select></div>
-                    <div class="row">
-                        <div class="col-md-6"><label>Precio Compra</label><input type="number" id="precioCompra" class="form-control" step="0.01"></div>
-                        <div class="col-md-6"><label>Precio Venta</label><input type="number" id="precioVenta" class="form-control" step="0.01"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Código Barras</label>
+                        <input type="text" id="codigoBarras" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" id="nombre" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea id="descripcion" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Categoría</label>
+                        <select id="categoriaId" class="form-control"></select>
                     </div>
                     <div class="row">
-                        <div class="col-md-6"><label>Stock Actual</label><input type="number" id="stockActual" class="form-control"></div>
-                        <div class="col-md-6"><label>Stock Mínimo</label><input type="number" id="stockMinimo" class="form-control"></div>
+                        <div class="col-md-6">
+                            <label class="form-label">Precio Compra</label>
+                            <input type="number" id="precioCompra" class="form-control" step="0.01">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Precio Venta</label>
+                            <input type="number" id="precioVenta" class="form-control" step="0.01" required>
+                        </div>
                     </div>
-                    <div class="mb-3"><label>Unidad Medida</label><input type="text" id="unidadMedida" class="form-control" value="unidad"></div>
-                    <div class="mb-3"><label>Activo</label><select id="activo" class="form-control"><option value="true">Sí</option><option value="false">No</option></select></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Stock Actual</label>
+                            <input type="number" id="stockActual" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Stock Mínimo</label>
+                            <input type="number" id="stockMinimo" class="form-control">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Unidad Medida</label>
+                        <input type="text" id="unidadMedida" class="form-control" value="unidad">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Activo</label>
+                        <select id="activo" class="form-control">
+                            <option value="true">Sí</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary-custom" onclick="guardarProducto()">Guardar</button>
+                    <button type="button" class="btn btn-primary-custom" id="btnGuardarProducto">Guardar</button>
                 </div>
             </div>
         </div>
@@ -198,32 +235,35 @@
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="js/api.js"></script>
     <script src="js/productos.js"></script>
     <script>
-        // Toggle sidebar
         document.getElementById('sidebarToggle').addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');
             if (sidebar.style.width === '260px') {
                 sidebar.style.width = '70px';
-                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'none');
-                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'none');
-                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '0');
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => {
+                    if (span) span.style.display = 'none';
+                });
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => {
+                    if (heading) heading.style.display = 'none';
+                });
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => {
+                    if (icon) icon.style.marginRight = '0';
+                });
             } else {
                 sidebar.style.width = '260px';
-                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'inline');
-                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'block');
-                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '12px');
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => {
+                    if (span) span.style.display = 'inline';
+                });
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => {
+                    if (heading) heading.style.display = 'block';
+                });
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => {
+                    if (icon) icon.style.marginRight = '12px';
+                });
             }
         });
 
-        // Mostrar usuario logueado
-        const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        document.getElementById('userName').innerText = userData.nombreCompleto || userData.username;
-        document.getElementById('userRolBadge').innerText = userData.rol || '';
-        document.getElementById('userRolText').innerHTML = `<strong>Rol:</strong> ${userData.rol || ''}`;
-
-        // Logout
         document.getElementById('btnLogout').addEventListener('click', function(e) {
             e.preventDefault();
             localStorage.removeItem('authToken');

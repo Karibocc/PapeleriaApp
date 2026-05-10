@@ -45,43 +45,109 @@ public class Producto {
 
     private LocalDateTime fechaActualizacion = LocalDateTime.now();
 
-    // Getters y Setters (puedes generarlos con Alt+Insert en NetBeans)
-    public Integer getIdProducto() { return idProducto; }
-    public void setIdProducto(Integer idProducto) { this.idProducto = idProducto; }
+    public Producto() {}
 
-    public String getCodigoBarras() { return codigoBarras; }
-    public void setCodigoBarras(String codigoBarras) { this.codigoBarras = codigoBarras; }
+    public Integer getIdProducto() { 
+        return idProducto; 
+    }
+    
+    public void setIdProducto(Integer idProducto) { 
+        this.idProducto = idProducto; 
+    }
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getCodigoBarras() { 
+        return codigoBarras; 
+    }
+    
+    public void setCodigoBarras(String codigoBarras) { 
+        this.codigoBarras = codigoBarras; 
+    }
 
-    public String getDescripcion() { return descripcion; }
-    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public String getNombre() { 
+        return nombre; 
+    }
+    
+    public void setNombre(String nombre) { 
+        this.nombre = nombre; 
+    }
 
-    public Categoria getCategoria() { return categoria; }
-    public void setCategoria(Categoria categoria) { this.categoria = categoria; }
+    public String getDescripcion() { 
+        return descripcion; 
+    }
+    
+    public void setDescripcion(String descripcion) { 
+        this.descripcion = descripcion; 
+    }
 
-    public BigDecimal getPrecioCompra() { return precioCompra; }
-    public void setPrecioCompra(BigDecimal precioCompra) { this.precioCompra = precioCompra; }
+    public Categoria getCategoria() { 
+        return categoria; 
+    }
+    
+    public void setCategoria(Categoria categoria) { 
+        this.categoria = categoria; 
+    }
 
-    public BigDecimal getPrecioVenta() { return precioVenta; }
-    public void setPrecioVenta(BigDecimal precioVenta) { this.precioVenta = precioVenta; }
+    public BigDecimal getPrecioCompra() { 
+        return precioCompra; 
+    }
+    
+    public void setPrecioCompra(BigDecimal precioCompra) { 
+        this.precioCompra = precioCompra; 
+    }
 
-    public Integer getStockActual() { return stockActual; }
-    public void setStockActual(Integer stockActual) { this.stockActual = stockActual; }
+    public BigDecimal getPrecioVenta() { 
+        return precioVenta; 
+    }
+    
+    public void setPrecioVenta(BigDecimal precioVenta) { 
+        this.precioVenta = precioVenta; 
+    }
 
-    public Integer getStockMinimo() { return stockMinimo; }
-    public void setStockMinimo(Integer stockMinimo) { this.stockMinimo = stockMinimo; }
+    public Integer getStockActual() { 
+        return stockActual; 
+    }
+    
+    public void setStockActual(Integer stockActual) { 
+        this.stockActual = stockActual; 
+    }
 
-    public String getUnidadMedida() { return unidadMedida; }
-    public void setUnidadMedida(String unidadMedida) { this.unidadMedida = unidadMedida; }
+    public Integer getStockMinimo() { 
+        return stockMinimo; 
+    }
+    
+    public void setStockMinimo(Integer stockMinimo) { 
+        this.stockMinimo = stockMinimo; 
+    }
 
-    public Boolean getActivo() { return activo; }
-    public void setActivo(Boolean activo) { this.activo = activo; }
+    public String getUnidadMedida() { 
+        return unidadMedida; 
+    }
+    
+    public void setUnidadMedida(String unidadMedida) { 
+        this.unidadMedida = unidadMedida; 
+    }
 
-    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
-    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+    public Boolean getActivo() { 
+        return activo; 
+    }
+    
+    public void setActivo(Boolean activo) { 
+        this.activo = activo; 
+    }
 
-    public LocalDateTime getFechaActualizacion() { return fechaActualizacion; }
-    public void setFechaActualizacion(LocalDateTime fechaActualizacion) { this.fechaActualizacion = fechaActualizacion; }
+    public LocalDateTime getFechaCreacion() { 
+        return fechaCreacion; 
+    }
+    
+    public void setFechaCreacion(LocalDateTime fechaCreacion) { 
+        this.fechaCreacion = fechaCreacion; 
+    }
+
+    public LocalDateTime getFechaActualizacion() { 
+        return fechaActualizacion; 
+    }
+    
+    public void setFechaActualizacion(LocalDateTime fechaActualizacion) { 
+        this.fechaActualizacion = fechaActualizacion; 
+    }
 }

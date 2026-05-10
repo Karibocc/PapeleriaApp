@@ -109,5 +109,6 @@ com\papeleria\repository\CompraRepository.class
 com\papeleria\service\patterns\adapter\FacturaSender.class
 com\papeleria\security\jwt\JwtTokenValidator.class
 com\papeleria\entity\Proveedor$EstadoProveedor.class
+com\papeleria\controller\CategoriaController.class
 com\papeleria\service\EmailService.class
 com\papeleria\controller\ProveedorController.class
