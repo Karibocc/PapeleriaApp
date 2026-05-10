@@ -46,6 +46,7 @@ F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\patterns
 F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\repository\OrigenMovimientoRepository.java
 F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\devices\POSPrinterAdapter.java
 F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\service\patterns\bridge\FormatoExcel.java
+F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\repository\DetalleVentaRepository.java
 F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\service\patterns\decorator\ReporteOrdenado.java
 F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\service\CompraService.java
 F:\Documentos\NetBeansProjects\PapeleriaApp\src\main\java\com\papeleria\dto\ReporteVentaDTO.java

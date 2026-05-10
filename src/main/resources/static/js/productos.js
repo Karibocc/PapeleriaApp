@@ -16,23 +16,20 @@ function getHeaders() {
     const token = getAuthToken();
     return {
         'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
+        'Authorization': token ? 'Bearer ' + token : ''
     };
 }
 
 function mostrarAlerta(mensaje, tipo) {
     const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${tipo} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+    alertDiv.className = 'alert alert-' + tipo + ' alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
     alertDiv.style.zIndex = '9999';
     alertDiv.style.minWidth = '300px';
     alertDiv.style.textAlign = 'center';
-    alertDiv.innerHTML = `
-        ${mensaje}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+    alertDiv.innerHTML = mensaje + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
     document.body.appendChild(alertDiv);
     
-    setTimeout(() => {
+    setTimeout(function() {
         if (alertDiv) alertDiv.remove();
     }, 3000);
 }
@@ -46,13 +43,13 @@ function escapeHtml(text) {
 
 async function cargarProductos() {
     try {
-        const response = await fetch(`${API_BASE_URL}/productos`, { headers: getHeaders() });
+        const response = await fetch(API_BASE_URL + '/productos', { headers: getHeaders() });
         
         if (response.status === 401) {
             localStorage.removeItem('authToken');
             localStorage.removeItem('currentUser');
             mostrarAlerta('Sesión expirada', 'warning');
-            setTimeout(() => {
+            setTimeout(function() {
                 window.location.href = 'login.html';
             }, 1500);
             return;
@@ -78,7 +75,7 @@ async function cargarProductos() {
 
 async function cargarCategorias() {
     try {
-        const response = await fetch(`${API_BASE_URL}/categorias`, { headers: getHeaders() });
+        const response = await fetch(API_BASE_URL + '/categorias', { headers: getHeaders() });
         if (response.ok) {
             categoriasData = await response.json();
             cargarCategoriasSelect();
@@ -92,9 +89,10 @@ function cargarCategoriasSelect() {
     const select = document.getElementById('categoriaId');
     if (select) {
         select.innerHTML = '<option value="">Seleccione categoría...</option>';
-        categoriasData.forEach(cat => {
-            select.innerHTML += `<option value="${cat.idCategoria}">${escapeHtml(cat.nombre)}</option>`;
-        });
+        for (var i = 0; i < categoriasData.length; i++) {
+            const cat = categoriasData[i];
+            select.innerHTML = select.innerHTML + '<option value="' + cat.idCategoria + '">' + escapeHtml(cat.nombre) + '</option>';
+        }
     }
 }
 
@@ -102,7 +100,13 @@ function actualizarTablaProductos() {
     const pageLength = parseInt(document.getElementById('pageLength')?.value || 10);
     const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
     const rolesPermitidos = ['ADMIN', 'admin', 'ADMINISTRADOR', 'Administrador', 'BODEGA', 'bodega'];
-    const mostrarAcciones = rolesPermitidos.includes(userData.rol);
+    let mostrarAcciones = false;
+    for (var i = 0; i < rolesPermitidos.length; i++) {
+        if (userData.rol === rolesPermitidos[i]) {
+            mostrarAcciones = true;
+            break;
+        }
+    }
     
     if (tablaProductos) {
         tablaProductos.destroy();
@@ -113,7 +117,28 @@ function actualizarTablaProductos() {
         pageLength: pageLength,
         lengthMenu: [5, 10, 25, 50, 100],
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+            "decimal": "",
+            "emptyTable": "No hay datos disponibles en la tabla",
+            "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+            "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+            "infoFiltered": "(filtrado de _MAX_ registros totales)",
+            "infoPostFix": "",
+            "thousands": ",",
+            "lengthMenu": "Mostrar _MENU_ registros",
+            "loadingRecords": "Cargando...",
+            "processing": "Procesando...",
+            "search": "Buscar:",
+            "zeroRecords": "No se encontraron resultados",
+            "paginate": {
+                "first": "Primero",
+                "last": "Último",
+                "next": "Siguiente",
+                "previous": "Anterior"
+            },
+            "aria": {
+                "sortAscending": ": activar para ordenar la columna de manera ascendente",
+                "sortDescending": ": activar para ordenar la columna de manera descendente"
+            }
         },
         columns: [
             { data: 'idProducto' },
@@ -122,56 +147,69 @@ function actualizarTablaProductos() {
             { data: 'stockActual', defaultContent: '0' },
             { 
                 data: 'precioVenta', 
-                render: data => data ? `$${parseFloat(data).toFixed(2)}` : '$0.00' 
+                render: function(data) { return data ? '$' + parseFloat(data).toFixed(2) : '$0.00'; }
             },
             { 
                 data: 'activo', 
-                render: data => data ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-danger">Inactivo</span>'
+                render: function(data) { return data ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-danger">Inactivo</span>'; }
             },
             { 
                 data: null, 
                 orderable: false, 
                 visible: mostrarAcciones,
-                render: (data) => `
-                    <button class="btn btn-sm btn-warning me-1" onclick="editarProducto(${data.idProducto})" title="Editar">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-danger" onclick="eliminarProducto(${data.idProducto})" title="Eliminar">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                `
+                render: function(data) {
+                    return '<button class="btn btn-sm btn-warning me-1" onclick="editarProducto(' + data.idProducto + ')" title="Editar">' +
+                               '<i class="fas fa-edit"></i>' +
+                           '</button>' +
+                           '<button class="btn btn-sm btn-danger" onclick="eliminarProducto(' + data.idProducto + ')" title="Eliminar">' +
+                               '<i class="fas fa-trash"></i>' +
+                           '</button>';
+                }
             }
         ]
     });
     
-    document.getElementById('pageLength')?.addEventListener('change', () => {
-        if (tablaProductos) {
-            tablaProductos.page.len(parseInt(document.getElementById('pageLength').value)).draw();
-        }
-    });
+    const pageLengthSelect = document.getElementById('pageLength');
+    if (pageLengthSelect) {
+        pageLengthSelect.addEventListener('change', function() {
+            if (tablaProductos) {
+                tablaProductos.page.len(parseInt(pageLengthSelect.value)).draw();
+            }
+        });
+    }
 }
 
 function actualizarGraficaStock() {
     const stockPorCategoria = {};
-    productosData.forEach(p => {
+    for (var i = 0; i < productosData.length; i++) {
+        const p = productosData[i];
         if (p.categoria && p.categoria.nombre) {
             const nombreCategoria = p.categoria.nombre;
-            stockPorCategoria[nombreCategoria] = (stockPorCategoria[nombreCategoria] || 0) + (p.stockActual || 0);
+            if (stockPorCategoria[nombreCategoria] === undefined) {
+                stockPorCategoria[nombreCategoria] = 0;
+            }
+            stockPorCategoria[nombreCategoria] = stockPorCategoria[nombreCategoria] + (p.stockActual || 0);
         }
-    });
+    }
     
     const ctx = document.getElementById('stockChart');
     if (ctx) {
         const existingChart = Chart.getChart(ctx);
         if (existingChart) existingChart.destroy();
         
+        const labels = Object.keys(stockPorCategoria);
+        const dataValues = [];
+        for (var i = 0; i < labels.length; i++) {
+            dataValues.push(stockPorCategoria[labels[i]]);
+        }
+        
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: Object.keys(stockPorCategoria).length ? Object.keys(stockPorCategoria) : ['Sin categorías'],
+                labels: labels.length > 0 ? labels : ['Sin categorías'],
                 datasets: [{
                     label: 'Stock por categoría',
-                    data: Object.keys(stockPorCategoria).length ? Object.values(stockPorCategoria) : [0],
+                    data: labels.length > 0 ? dataValues : [0],
                     backgroundColor: '#667eea',
                     borderRadius: 10
                 }]
@@ -188,22 +226,30 @@ function actualizarGraficaStock() {
 }
 
 function cargarStockBajoProductos() {
-    const stockBajo = productosData.filter(p => (p.stockActual || 0) <= (p.stockMinimo || 0));
+    const stockBajo = [];
+    for (var i = 0; i < productosData.length; i++) {
+        const p = productosData[i];
+        if ((p.stockActual || 0) <= (p.stockMinimo || 0)) {
+            stockBajo.push(p);
+        }
+    }
+    
     const tbody = document.getElementById('tablaStockBajoBody');
     if (tbody) {
         tbody.innerHTML = '';
         if (stockBajo.length === 0) {
             tbody.innerHTML = '<tr><td colspan="3" class="text-center">No hay productos con stock bajo</td></tr>';
         } else {
-            stockBajo.slice(0, 10).forEach(p => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${escapeHtml(p.nombre || '')}</td>
-                        <td class="text-danger fw-bold">${p.stockActual || 0}</td>
-                        <td>${p.stockMinimo || 0}</td>
-                    </tr>
-                `;
-            });
+            const maxItems = stockBajo.length > 10 ? 10 : stockBajo.length;
+            for (var i = 0; i < maxItems; i++) {
+                const p = stockBajo[i];
+                tbody.innerHTML = tbody.innerHTML + 
+                    '<tr>' +
+                        '<td>' + escapeHtml(p.nombre || '') + '</td>' +
+                        '<td class="text-danger fw-bold">' + (p.stockActual || 0) + '</td>' +
+                        '<td>' + (p.stockMinimo || 0) + '</td>' +
+                    '</tr>';
+            }
         }
     }
 }
@@ -227,13 +273,13 @@ function limpiarFormularioProducto() {
 
 async function editarProducto(id) {
     try {
-        const response = await fetch(`${API_BASE_URL}/productos/${id}`, { headers: getHeaders() });
+        const response = await fetch(API_BASE_URL + '/productos/' + id, { headers: getHeaders() });
         
         if (response.status === 401) {
             localStorage.removeItem('authToken');
             localStorage.removeItem('currentUser');
             mostrarAlerta('Sesión expirada', 'warning');
-            setTimeout(() => {
+            setTimeout(function() {
                 window.location.href = 'login.html';
             }, 1500);
             return;
@@ -303,7 +349,7 @@ async function guardarProducto() {
     btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
     
     try {
-        const url = productoId ? `${API_BASE_URL}/productos/${productoId}` : `${API_BASE_URL}/productos`;
+        const url = productoId ? API_BASE_URL + '/productos/' + productoId : API_BASE_URL + '/productos';
         const method = productoId ? 'PUT' : 'POST';
         const response = await fetch(url, { 
             method: method, 
@@ -315,7 +361,7 @@ async function guardarProducto() {
             localStorage.removeItem('authToken');
             localStorage.removeItem('currentUser');
             mostrarAlerta('Sesión expirada', 'warning');
-            setTimeout(() => {
+            setTimeout(function() {
                 window.location.href = 'login.html';
             }, 1500);
             return;
@@ -353,13 +399,13 @@ async function guardarProducto() {
 async function eliminarProducto(id) {
     if (confirm('¿Está seguro de eliminar este producto? Esta acción no se puede deshacer.')) {
         try {
-            const response = await fetch(`${API_BASE_URL}/productos/${id}`, { method: 'DELETE', headers: getHeaders() });
+            const response = await fetch(API_BASE_URL + '/productos/' + id, { method: 'DELETE', headers: getHeaders() });
             
             if (response.status === 401) {
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('currentUser');
                 mostrarAlerta('Sesión expirada', 'warning');
-                setTimeout(() => {
+                setTimeout(function() {
                     window.location.href = 'login.html';
                 }, 1500);
                 return;
@@ -393,10 +439,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementById('userName').innerText = userData.nombreCompleto || userData.username || 'Usuario';
     document.getElementById('userRolBadge').innerText = userData.rol || '';
-    document.getElementById('userRolText').innerHTML = `<strong>Rol:</strong> ${userData.rol || ''}`;
+    document.getElementById('userRolText').innerHTML = '<strong>Rol:</strong> ' + (userData.rol || '');
     
     const rolesPermitidos = ['ADMIN', 'admin', 'ADMINISTRADOR', 'Administrador', 'BODEGA', 'bodega'];
-    const tienePermiso = rolesPermitidos.includes(userData.rol);
+    let tienePermiso = false;
+    for (var i = 0; i < rolesPermitidos.length; i++) {
+        if (userData.rol === rolesPermitidos[i]) {
+            tienePermiso = true;
+            break;
+        }
+    }
     
     console.log('Tiene permiso para agregar productos:', tienePermiso);
     

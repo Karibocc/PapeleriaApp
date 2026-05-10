@@ -8,7 +8,8 @@ import java.math.BigDecimal;
 public class DetalleVenta {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer idDetalle;
+    @Column(name = "id_detalle_venta")
+    private Integer idDetalleVenta;
 
     @ManyToOne
     @JoinColumn(name = "id_venta", nullable = false)
@@ -26,22 +27,53 @@ public class DetalleVenta {
 
     private BigDecimal descuento = BigDecimal.ZERO;
 
-    // Getters y Setters
-    public Integer getIdDetalle() { return idDetalle; }
-    public void setIdDetalle(Integer idDetalle) { this.idDetalle = idDetalle; }
+    public DetalleVenta() {}
 
-    public Venta getVenta() { return venta; }
-    public void setVenta(Venta venta) { this.venta = venta; }
+    public Integer getIdDetalleVenta() { 
+        return idDetalleVenta; 
+    }
+    
+    public void setIdDetalleVenta(Integer idDetalleVenta) { 
+        this.idDetalleVenta = idDetalleVenta; 
+    }
 
-    public Producto getProducto() { return producto; }
-    public void setProducto(Producto producto) { this.producto = producto; }
+    public Venta getVenta() { 
+        return venta; 
+    }
+    
+    public void setVenta(Venta venta) { 
+        this.venta = venta; 
+    }
 
-    public Integer getCantidad() { return cantidad; }
-    public void setCantidad(Integer cantidad) { this.cantidad = cantidad; }
+    public Producto getProducto() { 
+        return producto; 
+    }
+    
+    public void setProducto(Producto producto) { 
+        this.producto = producto; 
+    }
 
-    public BigDecimal getPrecioUnitario() { return precioUnitario; }
-    public void setPrecioUnitario(BigDecimal precioUnitario) { this.precioUnitario = precioUnitario; }
+    public Integer getCantidad() { 
+        return cantidad; 
+    }
+    
+    public void setCantidad(Integer cantidad) { 
+        this.cantidad = cantidad; 
+    }
 
-    public BigDecimal getDescuento() { return descuento; }
-    public void setDescuento(BigDecimal descuento) { this.descuento = descuento; }
+    public BigDecimal getPrecioUnitario() { 
+        return precioUnitario; 
+    }
+    
+    public void setPrecioUnitario(BigDecimal precioUnitario) { 
+        this.precioUnitario = precioUnitario; 
+    }
+
+    public BigDecimal getDescuento() { 
+        return descuento; 
+    }
+    
+    public void setDescuento(BigDecimal descuento) { 
+        this.descuento = descuento; 
+    }
 }

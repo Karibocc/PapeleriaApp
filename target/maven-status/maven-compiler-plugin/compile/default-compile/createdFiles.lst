@@ -106,6 +106,7 @@ com\papeleria\service\VentaService.class
 com\papeleria\patterns\behavioral\strategy\SinDescuentoStrategy.class
 com\papeleria\entity\Proveedor.class
 com\papeleria\repository\CompraRepository.class
+com\papeleria\repository\DetalleVentaRepository.class
 com\papeleria\service\patterns\adapter\FacturaSender.class
 com\papeleria\security\jwt\JwtTokenValidator.class
 com\papeleria\entity\Proveedor$EstadoProveedor.class

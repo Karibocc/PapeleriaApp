@@ -1,5 +1,6 @@
 package com.papeleria.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -16,15 +17,17 @@ public class Venta {
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora = LocalDateTime.now();
 
+    @Column(precision = 12, scale = 2)
     private BigDecimal descuento = BigDecimal.ZERO;
+
+    @Column(precision = 12, scale = 2)
     private BigDecimal impuesto = BigDecimal.ZERO;
 
     @Column(name = "monto_pagado", nullable = false, precision = 12, scale = 2)
     private BigDecimal montoPagado;
 
-    @ManyToOne
-    @JoinColumn(name = "id_metodo_pago", nullable = false)
-    private MetodoPago metodoPago;
+    @Column(name = "metodo_pago", length = 50)
+    private String metodoPago;
 
     @ManyToOne
     @JoinColumn(name = "id_cliente")
@@ -35,45 +38,103 @@ public class Venta {
     private Usuario usuario;
 
     @ManyToOne
-    @JoinColumn(name = "id_estado_documento", nullable = false)
+    @JoinColumn(name = "id_estado_documento")
     private EstadoDocumento estado;
 
+    @Column(columnDefinition = "TEXT")
     private String observacion;
 
-    @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<DetalleVenta> detalles = new ArrayList<>();
 
-    // Getters y Setters
-    public Integer getIdVenta() { return idVenta; }
-    public void setIdVenta(Integer idVenta) { this.idVenta = idVenta; }
+    public Venta() {}
 
-    public LocalDateTime getFechaHora() { return fechaHora; }
-    public void setFechaHora(LocalDateTime fechaHora) { this.fechaHora = fechaHora; }
+    public Integer getIdVenta() { 
+        return idVenta; 
+    }
+    
+    public void setIdVenta(Integer idVenta) { 
+        this.idVenta = idVenta; 
+    }
 
-    public BigDecimal getDescuento() { return descuento; }
-    public void setDescuento(BigDecimal descuento) { this.descuento = descuento; }
+    public LocalDateTime getFechaHora() { 
+        return fechaHora; 
+    }
+    
+    public void setFechaHora(LocalDateTime fechaHora) { 
+        this.fechaHora = fechaHora; 
+    }
 
-    public BigDecimal getImpuesto() { return impuesto; }
-    public void setImpuesto(BigDecimal impuesto) { this.impuesto = impuesto; }
+    public BigDecimal getDescuento() { 
+        return descuento; 
+    }
+    
+    public void setDescuento(BigDecimal descuento) { 
+        this.descuento = descuento; 
+    }
 
-    public BigDecimal getMontoPagado() { return montoPagado; }
-    public void setMontoPagado(BigDecimal montoPagado) { this.montoPagado = montoPagado; }
+    public BigDecimal getImpuesto() { 
+        return impuesto; 
+    }
+    
+    public void setImpuesto(BigDecimal impuesto) { 
+        this.impuesto = impuesto; 
+    }
 
-    public MetodoPago getMetodoPago() { return metodoPago; }
-    public void setMetodoPago(MetodoPago metodoPago) { this.metodoPago = metodoPago; }
+    public BigDecimal getMontoPagado() { 
+        return montoPagado; 
+    }
+    
+    public void setMontoPagado(BigDecimal montoPagado) { 
+        this.montoPagado = montoPagado; 
+    }
 
-    public Cliente getCliente() { return cliente; }
-    public void setCliente(Cliente cliente) { this.cliente = cliente; }
+    public String getMetodoPago() { 
+        return metodoPago; 
+    }
+    
+    public void setMetodoPago(String metodoPago) { 
+        this.metodoPago = metodoPago; 
+    }
 
-    public Usuario getUsuario() { return usuario; }
-    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    public Cliente getCliente() { 
+        return cliente; 
+    }
+    
+    public void setCliente(Cliente cliente) { 
+        this.cliente = cliente; 
+    }
 
-    public EstadoDocumento getEstado() { return estado; }
-    public void setEstado(EstadoDocumento estado) { this.estado = estado; }
+    public Usuario getUsuario() { 
+        return usuario; 
+    }
+    
+    public void setUsuario(Usuario usuario) { 
+        this.usuario = usuario; 
+    }
 
-    public String getObservacion() { return observacion; }
-    public void setObservacion(String observacion) { this.observacion = observacion; }
+    public EstadoDocumento getEstado() { 
+        return estado; 
+    }
+    
+    public void setEstado(EstadoDocumento estado) { 
+        this.estado = estado; 
+    }
 
-    public List<DetalleVenta> getDetalles() { return detalles; }
-    public void setDetalles(List<DetalleVenta> detalles) { this.detalles = detalles; }
+    public String getObservacion() { 
+        return observacion; 
+    }
+    
+    public void setObservacion(String observacion) { 
+        this.observacion = observacion; 
+    }
+
+    public List<DetalleVenta> getDetalles() { 
+        return detalles; 
+    }
+    
+    public void setDetalles(List<DetalleVenta> detalles) { 
+        this.detalles = detalles; 
+    }
 }

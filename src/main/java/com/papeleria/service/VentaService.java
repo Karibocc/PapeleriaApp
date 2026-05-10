@@ -1,5 +1,6 @@
 package com.papeleria.service;
 
+import com.papeleria.dto.FacturaDTO;
 import com.papeleria.dto.TopProductoDTO;
 import com.papeleria.dto.VentaRequestDTO;
 import com.papeleria.entity.*;
@@ -8,187 +9,250 @@ import com.papeleria.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.papeleria.service.TicketPrintService;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class VentaService {
 
     @Autowired
     private VentaRepository ventaRepository;
+    
     @Autowired
     private ProductoRepository productoRepository;
+    
     @Autowired
     private ClienteRepository clienteRepository;
+    
     @Autowired
     private UsuarioRepository usuarioRepository;
+    
     @Autowired
-    private MetodoPagoRepository metodoPagoRepository;
-    @Autowired
-    private EstadoDocumentoRepository estadoDocumentoRepository;
-    @Autowired
-    private TipoMovimientoRepository tipoMovimientoRepository;
-    @Autowired
-    private OrigenMovimientoRepository origenMovimientoRepository;
-    @Autowired
-    private MovimientoInventarioRepository movimientoInventarioRepository;
+    private DetalleVentaRepository detalleVentaRepository;
 
-    @Autowired
-    private TicketPrintService ticketPrintService;  // Inyección del servicio de impresión
+    public List<Venta> listarTodas() {
+        return ventaRepository.findAll();
+    }
+
+    public Venta obtenerPorId(Integer id) {
+        return ventaRepository.findById(id).orElse(null);
+    }
+
+    public List<Venta> obtenerVentasPorFechas(LocalDateTime inicio, LocalDateTime fin) {
+        return ventaRepository.findVentasPorFecha(inicio, fin);
+    }
+
+    public List<Venta> obtenerVentasPorCliente(Integer idCliente) {
+        return ventaRepository.findByClienteIdCliente(idCliente);
+    }
+
+    public List<Venta> obtenerVentasPorUsuario(Integer idUsuario) {
+        return ventaRepository.findByUsuarioIdUsuario(idUsuario);
+    }
+
+    public Map<String, Object> obtenerTotalesDelDia() {
+        LocalDateTime inicio = LocalDate.now().atStartOfDay();
+        LocalDateTime fin = LocalDate.now().atTime(LocalTime.MAX);
+        List<Venta> ventas = ventaRepository.findVentasPorFecha(inicio, fin);
+        
+        BigDecimal totalVentas = BigDecimal.ZERO;
+        for (Venta venta : ventas) {
+            BigDecimal totalVenta = venta.getMontoPagado().subtract(venta.getDescuento());
+            totalVentas = totalVentas.add(totalVenta);
+        }
+        
+        Map<String, Object> resultado = new HashMap<>();
+        resultado.put("totalVentas", totalVentas);
+        resultado.put("cantidadVentas", ventas.size());
+        resultado.put("fecha", LocalDate.now().toString());
+        return resultado;
+    }
+
+    public Map<String, Object> obtenerTotalesDelMes() {
+        LocalDate ahora = LocalDate.now();
+        LocalDateTime inicio = LocalDate.of(ahora.getYear(), ahora.getMonth(), 1).atStartOfDay();
+        LocalDateTime fin = LocalDate.of(ahora.getYear(), ahora.getMonth(), ahora.lengthOfMonth()).atTime(LocalTime.MAX);
+        
+        List<Venta> ventas = ventaRepository.findVentasPorFecha(inicio, fin);
+        
+        BigDecimal totalVentas = BigDecimal.ZERO;
+        for (Venta venta : ventas) {
+            BigDecimal totalVenta = venta.getMontoPagado().subtract(venta.getDescuento());
+            totalVentas = totalVentas.add(totalVenta);
+        }
+        
+        Map<String, Object> resultado = new HashMap<>();
+        resultado.put("totalVentas", totalVentas);
+        resultado.put("cantidadVentas", ventas.size());
+        resultado.put("mes", ahora.getMonth().toString());
+        resultado.put("ano", ahora.getYear());
+        return resultado;
+    }
+
+    public FacturaDTO obtenerFactura(Integer idVenta) {
+        Venta venta = ventaRepository.findById(idVenta)
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada con id: " + idVenta));
+        
+        FacturaDTO factura = new FacturaDTO();
+        factura.setIdVenta(Long.valueOf(venta.getIdVenta()));
+        factura.setFechaEmision(venta.getFechaHora());
+        factura.setMetodoPago(venta.getMetodoPago());
+        factura.setDescuento(venta.getDescuento());
+        factura.setImpuesto(venta.getImpuesto());
+        factura.setMontoPagado(venta.getMontoPagado());
+        factura.setObservaciones(venta.getObservacion());
+        
+        factura.setNombreNegocio("Papelería App");
+        factura.setNitNegocio("900.000.000-1");
+        factura.setTelefonoNegocio("300 000 0000");
+        factura.setCorreoNegocio("ventas@papeapp.com");
+        factura.setDireccionNegocio("Calle Principal #123");
+        
+        if (venta.getCliente() != null) {
+            factura.setIdCliente(venta.getCliente().getIdCliente());
+            factura.setNombreCliente(venta.getCliente().getNombre());
+            factura.setTelefonoCliente(venta.getCliente().getTelefono());
+            factura.setDireccionCliente(venta.getCliente().getDireccion());
+        } else {
+            factura.setNombreCliente("Cliente Mostrador");
+        }
+        
+        if (venta.getUsuario() != null) {
+            factura.setNombreVendedor(venta.getUsuario().getNombreCompleto());
+        }
+        
+        List<FacturaDTO.DetalleFacturaDTO> detallesDTO = new ArrayList<>();
+        BigDecimal subtotal = BigDecimal.ZERO;
+        
+        List<DetalleVenta> detalles = detalleVentaRepository.findByVentaIdVenta(idVenta);
+        for (DetalleVenta detalle : detalles) {
+            FacturaDTO.DetalleFacturaDTO detalleDTO = new FacturaDTO.DetalleFacturaDTO();
+            detalleDTO.setIdProducto(detalle.getProducto().getIdProducto());
+            detalleDTO.setCodigoBarras(detalle.getProducto().getCodigoBarras());
+            detalleDTO.setNombreProducto(detalle.getProducto().getNombre());
+            detalleDTO.setCantidad(detalle.getCantidad());
+            detalleDTO.setPrecioUnitario(detalle.getPrecioUnitario());
+            detalleDTO.setDescuentoLinea(detalle.getDescuento());
+            
+            BigDecimal subtotalLinea = detalle.getPrecioUnitario().multiply(BigDecimal.valueOf(detalle.getCantidad()));
+            detalleDTO.setSubtotalLinea(subtotalLinea);
+            
+            detallesDTO.add(detalleDTO);
+            subtotal = subtotal.add(subtotalLinea);
+        }
+        
+        factura.setDetalles(detallesDTO);
+        factura.setSubtotal(subtotal);
+        BigDecimal total = subtotal.add(venta.getImpuesto()).subtract(venta.getDescuento());
+        factura.setTotal(total);
+        factura.setCambio(venta.getMontoPagado().subtract(total));
+        
+        return factura;
+    }
 
     @Transactional
     public Venta registrarVenta(VentaRequestDTO request) {
+        System.out.println("=== REGISTRANDO VENTA ===");
+        System.out.println("Descuento recibido: " + request.getDescuento());
+        System.out.println("Impuesto recibido: " + request.getImpuesto());
+        System.out.println("MontoPagado recibido: " + request.getMontoPagado());
+        
+        BigDecimal subtotalCalculado = BigDecimal.ZERO;
+        for (VentaRequestDTO.DetalleDTO detalleDTO : request.getDetalles()) {
+            Producto producto = productoRepository.findById(detalleDTO.getIdProducto()).orElse(null);
+            if (producto != null) {
+                BigDecimal itemTotal = producto.getPrecioVenta().multiply(BigDecimal.valueOf(detalleDTO.getCantidad()));
+                subtotalCalculado = subtotalCalculado.add(itemTotal);
+                System.out.println("Producto: " + producto.getNombre() + " - Cantidad: " + detalleDTO.getCantidad() + " - Subtotal linea: " + itemTotal);
+            }
+        }
+        
+        BigDecimal ivaPorcentaje = new BigDecimal("0.19");
+        BigDecimal impuestoCalculado = subtotalCalculado.multiply(ivaPorcentaje).setScale(2, RoundingMode.HALF_UP);
+        
+        System.out.println("Subtotal calculado: " + subtotalCalculado);
+        System.out.println("Impuesto calculado (19%): " + impuestoCalculado);
+        
         Venta venta = new Venta();
         venta.setFechaHora(LocalDateTime.now());
-        venta.setDescuento(request.getDescuento());
-        venta.setImpuesto(request.getImpuesto());
-        venta.setMontoPagado(request.getMontoPagado());
+        venta.setDescuento(request.getDescuento() != null ? request.getDescuento() : BigDecimal.ZERO);
+        venta.setImpuesto(impuestoCalculado);
+        venta.setMontoPagado(request.getMontoPagado() != null ? request.getMontoPagado() : BigDecimal.ZERO);
+        venta.setMetodoPago(request.getMetodoPago());
+        venta.setObservacion(request.getObservacion());
 
-        // Método de pago
-        MetodoPago metodoPago = metodoPagoRepository.findByNombre(request.getMetodoPago().toLowerCase())
-                .orElseThrow(() -> new ResourceNotFoundException("Método de pago no encontrado: " + request.getMetodoPago()));
-        venta.setMetodoPago(metodoPago);
-
-        if (request.getIdCliente() != null) {
-            Cliente cliente = clienteRepository.findById(request.getIdCliente())
-                    .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
+        if (request.getIdCliente() != null && request.getIdCliente() > 0) {
+            Cliente cliente = clienteRepository.findById(request.getIdCliente()).orElse(null);
             venta.setCliente(cliente);
         }
 
-        Usuario usuario = usuarioRepository.findById(request.getIdUsuario())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Usuario usuario = usuarioRepository.findById(request.getIdUsuario()).orElse(null);
         venta.setUsuario(usuario);
+        
+        venta.setEstado(null);
 
-        // Estado por defecto: "registrada"
-        EstadoDocumento estadoRegistrada = estadoDocumentoRepository.findByNombre("registrada")
-                .orElseThrow(() -> new ResourceNotFoundException("Estado 'registrada' no encontrado"));
-        venta.setEstado(estadoRegistrada);
-        venta.setObservacion(request.getObservacion());
-
-        BigDecimal subtotal = BigDecimal.ZERO;
+        Venta ventaGuardada = ventaRepository.save(venta);
+        System.out.println("Venta guardada con ID: " + ventaGuardada.getIdVenta());
 
         for (VentaRequestDTO.DetalleDTO detalleDTO : request.getDetalles()) {
-            Producto producto = productoRepository.findById(detalleDTO.getIdProducto())
-                    .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
-
+            Producto producto = productoRepository.findById(detalleDTO.getIdProducto()).orElse(null);
+            
+            if (producto == null) {
+                throw new RuntimeException("Producto no encontrado: " + detalleDTO.getIdProducto());
+            }
+            
             if (producto.getStockActual() < detalleDTO.getCantidad()) {
-                throw new IllegalArgumentException("Stock insuficiente para: " + producto.getNombre());
+                throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre());
             }
 
             DetalleVenta detalle = new DetalleVenta();
+            detalle.setVenta(ventaGuardada);
             detalle.setProducto(producto);
             detalle.setCantidad(detalleDTO.getCantidad());
             detalle.setPrecioUnitario(producto.getPrecioVenta());
             detalle.setDescuento(detalleDTO.getDescuento() != null ? detalleDTO.getDescuento() : BigDecimal.ZERO);
-            detalle.setVenta(venta);
-            venta.getDetalles().add(detalle);
-
-            // Actualizar stock
-            int stockAnterior = producto.getStockActual();
-            int nuevaCantidad = stockAnterior - detalleDTO.getCantidad();
-            producto.setStockActual(nuevaCantidad);
+            
+            detalleVentaRepository.save(detalle);
+            
+            int nuevoStock = producto.getStockActual() - detalleDTO.getCantidad();
+            producto.setStockActual(nuevoStock);
             productoRepository.save(producto);
-
-            // Registrar movimiento de inventario (salida por venta)
-            TipoMovimiento tipoSalida = tipoMovimientoRepository.findByNombre("salida")
-                    .orElseThrow(() -> new ResourceNotFoundException("Tipo movimiento 'salida' no encontrado"));
-            OrigenMovimiento origenVenta = origenMovimientoRepository.findByNombre("venta")
-                    .orElseThrow(() -> new ResourceNotFoundException("Origen movimiento 'venta' no encontrado"));
-
-            MovimientoInventario movimiento = new MovimientoInventario();
-            movimiento.setProducto(producto);
-            movimiento.setTipoMovimiento(tipoSalida);
-            movimiento.setOrigenMovimiento(origenVenta);
-            movimiento.setVenta(venta);
-            movimiento.setCantidad(detalleDTO.getCantidad());
-            movimiento.setStockAnterior(stockAnterior);
-            movimiento.setStockPosterior(nuevaCantidad);
-            movimiento.setCostoUnitario(producto.getPrecioCompra());
-            movimiento.setUsuario(usuario);
-            movimiento.setObservacion("Venta #" + (venta.getIdVenta() != null ? venta.getIdVenta() : "pendiente"));
-            movimientoInventarioRepository.save(movimiento);
-
-            BigDecimal linea = producto.getPrecioVenta()
-                    .multiply(BigDecimal.valueOf(detalleDTO.getCantidad()))
-                    .subtract(detalle.getDescuento());
-            subtotal = subtotal.add(linea);
+            
+            System.out.println("Stock actualizado - Producto: " + producto.getNombre() + ", Stock restante: " + nuevoStock);
         }
 
-        BigDecimal total = subtotal.add(venta.getImpuesto()).subtract(venta.getDescuento());
-        if (venta.getMontoPagado().compareTo(total) < 0) {
-            throw new IllegalArgumentException("Monto pagado insuficiente. Total: " + total);
-        }
-
-        Venta ventaGuardada = ventaRepository.save(venta);
-
-        // --- IMPRESIÓN AUTOMÁTICA DEL TICKET ---
-        // Se ejecuta en un hilo separado para no bloquear la respuesta
-        new Thread(() -> {
-            try {
-                ticketPrintService.printTicket(ventaGuardada);  // ✅ corregido: usa ticketPrintService
-            } catch (Exception e) {
-                System.err.println("Error al imprimir ticket: " + e.getMessage());
-                e.printStackTrace();
-            }
-        }).start();
-
+        System.out.println("=== VENTA REGISTRADA EXITOSAMENTE ===");
         return ventaGuardada;
     }
 
     @Transactional
     public Venta anularVenta(Integer idVenta) {
         Venta venta = ventaRepository.findById(idVenta)
-                .orElseThrow(() -> new ResourceNotFoundException("Venta no encontrada con id: " + idVenta));
+                .orElseThrow(() -> new RuntimeException("Venta no encontrada con id: " + idVenta));
 
-        EstadoDocumento estadoAnulada = estadoDocumentoRepository.findByNombre("anulada")
-                .orElseThrow(() -> new ResourceNotFoundException("Estado 'anulada' no encontrado"));
-
-        if (venta.getEstado().getNombre().equals("anulada")) {
+        if (venta.getEstado() != null) {
             throw new IllegalStateException("La venta ya está anulada");
         }
 
-        TipoMovimiento tipoEntrada = tipoMovimientoRepository.findByNombre("entrada")
-                .orElseThrow(() -> new ResourceNotFoundException("Tipo movimiento 'entrada' no encontrado"));
-        OrigenMovimiento origenDevolucionVenta = origenMovimientoRepository.findByNombre("devolucion_venta")
-                .orElseThrow(() -> new ResourceNotFoundException("Origen movimiento 'devolucion_venta' no encontrado"));
-
-        // Revertir stock y registrar movimientos
-        for (DetalleVenta detalle : venta.getDetalles()) {
+        List<DetalleVenta> detalles = detalleVentaRepository.findByVentaIdVenta(idVenta);
+        for (DetalleVenta detalle : detalles) {
             Producto producto = detalle.getProducto();
-            int stockAnterior = producto.getStockActual();
-            int nuevaCantidad = stockAnterior + detalle.getCantidad();
-            producto.setStockActual(nuevaCantidad);
+            int nuevoStock = producto.getStockActual() + detalle.getCantidad();
+            producto.setStockActual(nuevoStock);
             productoRepository.save(producto);
-
-            MovimientoInventario movimiento = new MovimientoInventario();
-            movimiento.setProducto(producto);
-            movimiento.setTipoMovimiento(tipoEntrada);
-            movimiento.setOrigenMovimiento(origenDevolucionVenta);
-            movimiento.setVenta(venta);
-            movimiento.setCantidad(detalle.getCantidad());
-            movimiento.setStockAnterior(stockAnterior);
-            movimiento.setStockPosterior(nuevaCantidad);
-            movimiento.setCostoUnitario(detalle.getPrecioUnitario());
-            movimiento.setUsuario(venta.getUsuario());
-            movimiento.setObservacion("Anulación de venta #" + venta.getIdVenta());
-            movimientoInventarioRepository.save(movimiento);
         }
 
-        venta.setEstado(estadoAnulada);
-        return ventaRepository.save(venta);
+        return venta;
     }
 
-    /**
-     * Obtiene los productos más vendidos en un rango de fechas.
-     * @param fechaInicio fecha inicial (incluida)
-     * @param fechaFin fecha final (incluida)
-     * @return lista de TopProductoDTO ordenada por cantidad vendida descendente
-     */
     public List<TopProductoDTO> obtenerTopProductos(LocalDate fechaInicio, LocalDate fechaFin) {
         LocalDateTime inicio = fechaInicio.atStartOfDay();
         LocalDateTime fin = fechaFin.atTime(LocalTime.MAX);
