@@ -9,9 +9,22 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <link href="https://use.fontawesome.com/releases/v6.3.0/css/all.css" rel="stylesheet" />
+    <style>
+        .resumen-card {
+            border-left: 4px solid;
+            transition: transform 0.2s;
+            margin-bottom: 15px;
+        }
+        .resumen-card:hover {
+            transform: translateY(-5px);
+        }
+        .card-ventas { border-left-color: #667eea; }
+        .card-compras { border-left-color: #28a745; }
+        .card-stock { border-left-color: #ffc107; }
+        .card-utilidad { border-left-color: #dc3545; }
+    </style>
 </head>
 <body>
-    <!-- Barra de navegación superior moderna -->
     <nav class="navbar-modern navbar navbar-expand navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="index.html">
@@ -40,7 +53,6 @@
     </nav>
 
     <div class="d-flex">
-        <!-- Sidebar moderna -->
         <div class="sidebar-modern" id="sidebar" style="width: 260px; min-height: calc(100vh - 60px);">
             <div class="sidebar-heading">Módulos</div>
             <nav class="nav flex-column">
@@ -78,36 +90,36 @@
             </div>
         </div>
 
-        <!-- Contenido principal -->
         <div class="main-content flex-grow-1">
             <div class="container-fluid px-4">
                 <h1 class="mt-2 mb-4">Reportes</h1>
+
+                <div id="resumenContainer" class="row mb-4"></div>
 
                 <div class="row">
                     <div class="col-md-6">
                         <div class="chart-card card mb-4">
                             <div class="card-header">
-                                <i class="fas fa-file-pdf"></i> Reporte de Ventas
+                                <i class="fas fa-chart-line"></i> Reporte de Ventas
                             </div>
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-5 mb-2">
                                         <label>Fecha Inicio</label>
-                                        <input type="date" id="fechaInicio" class="form-control">
+                                        <input type="date" id="fechaInicioVentas" class="form-control">
                                     </div>
                                     <div class="col-md-5 mb-2">
                                         <label>Fecha Fin</label>
-                                        <input type="date" id="fechaFin" class="form-control">
+                                        <input type="date" id="fechaFinVentas" class="form-control">
                                     </div>
-                                    <div class="col-md-2 mt-4">
+                                    <div class="col-md-2 mb-2">
+                                        <label>&nbsp;</label>
                                         <button class="btn btn-primary-custom w-100" onclick="generarReporteVentasPDF()">
                                             <i class="fas fa-file-pdf"></i> PDF
                                         </button>
                                     </div>
-                                    <div class="col-md-12 mt-2">
-                                        <button class="btn btn-success w-100" onclick="generarReporteVentasExcel()">
-                                            <i class="fas fa-file-excel"></i> Excel
-                                        </button>
+                                    <div class="col-md-12">
+                                        <div id="tablaVentasContainer"></div>
                                     </div>
                                 </div>
                             </div>
@@ -116,16 +128,27 @@
                     <div class="col-md-6">
                         <div class="chart-card card mb-4">
                             <div class="card-header">
-                                <i class="fas fa-boxes"></i> Reporte de Inventario
+                                <i class="fas fa-chart-line"></i> Reporte de Compras
                             </div>
                             <div class="card-body">
-                                <div class="d-grid gap-2">
-                                    <button class="btn btn-primary-custom" onclick="generarReporteInventarioPDF()">
-                                        <i class="fas fa-file-pdf"></i> Generar PDF
-                                    </button>
-                                    <button class="btn btn-success" onclick="generarReporteInventarioExcel()">
-                                        <i class="fas fa-file-excel"></i> Generar Excel
-                                    </button>
+                                <div class="row">
+                                    <div class="col-md-5 mb-2">
+                                        <label>Fecha Inicio</label>
+                                        <input type="date" id="fechaInicioCompras" class="form-control">
+                                    </div>
+                                    <div class="col-md-5 mb-2">
+                                        <label>Fecha Fin</label>
+                                        <input type="date" id="fechaFinCompras" class="form-control">
+                                    </div>
+                                    <div class="col-md-2 mb-2">
+                                        <label>&nbsp;</label>
+                                        <button class="btn btn-primary-custom w-100" onclick="generarReporteComprasPDF()">
+                                            <i class="fas fa-file-pdf"></i> PDF
+                                        </button>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div id="tablaComprasContainer"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -146,7 +169,16 @@
                                 <label>Fecha Fin</label>
                                 <input type="date" id="topFin" class="form-control">
                             </div>
-                            <div class="col-md-4 mt-4">
+                            <div class="col-md-2 mb-2">
+                                <label>Cantidad</label>
+                                <select id="topLimit" class="form-control">
+                                    <option value="5">5</option>
+                                    <option value="10" selected>10</option>
+                                    <option value="20">20</option>
+                                    <option value="50">50</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 mt-4">
                                 <button class="btn btn-primary-custom w-100" onclick="cargarTopProductos()">
                                     <i class="fas fa-search"></i> Buscar
                                 </button>
@@ -155,7 +187,7 @@
                         <div class="mt-3">
                             <table id="tablaTopProductos" class="table table-striped">
                                 <thead>
-                                    <tr><th>Producto</th><th>Total Vendido</th>
+                                    <tr><th>Producto</th><th>Categoría</th><th>Cantidad Vendida</th><th>Total Vendido</th>
                                 </thead>
                                 <tbody></tbody>
                             </table>
@@ -165,7 +197,21 @@
 
                 <div class="chart-card card mb-4">
                     <div class="card-header">
-                        <i class="fas fa-chart-line"></i> Utilidades por Período
+                        <i class="fas fa-exclamation-triangle"></i> Productos con Stock Bajo
+                    </div>
+                    <div class="card-body">
+                        <table id="tablaStockBajo" class="table table-striped">
+                            <thead>
+                                <tr><th>Producto</th><th>Categoría</th><th>Stock Actual</th><th>Stock Mínimo</th>
+                                </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="chart-card card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-chart-bar"></i> Utilidad por Período
                     </div>
                     <div class="card-body">
                         <div class="row">
@@ -179,7 +225,7 @@
                             </div>
                             <div class="col-md-4 mt-4">
                                 <button class="btn btn-primary-custom w-100" onclick="cargarUtilidades()">
-                                    <i class="fas fa-calculator"></i> Calcular
+                                    <i class="fas fa-calculator"></i> Calcular Utilidad
                                 </button>
                             </div>
                         </div>
@@ -208,32 +254,40 @@
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="js/api.js"></script>
     <script src="js/reportes.js"></script>
     <script>
-        // Toggle sidebar
         document.getElementById('sidebarToggle').addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');
             if (sidebar.style.width === '260px') {
                 sidebar.style.width = '70px';
-                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'none');
-                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'none');
-                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '0');
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(function(span) {
+                    if (span) span.style.display = 'none';
+                });
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(function(heading) {
+                    if (heading) heading.style.display = 'none';
+                });
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(function(icon) {
+                    if (icon) icon.style.marginRight = '0';
+                });
             } else {
                 sidebar.style.width = '260px';
-                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'inline');
-                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'block');
-                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '12px');
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(function(span) {
+                    if (span) span.style.display = 'inline';
+                });
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(function(heading) {
+                    if (heading) heading.style.display = 'block';
+                });
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(function(icon) {
+                    if (icon) icon.style.marginRight = '12px';
+                });
             }
         });
 
-        // Mostrar usuario logueado
         const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        document.getElementById('userName').innerText = userData.nombreCompleto || userData.username;
+        document.getElementById('userName').innerText = userData.nombreCompleto || userData.username || 'Usuario';
         document.getElementById('userRolBadge').innerText = userData.rol || '';
-        document.getElementById('userRolText').innerHTML = `<strong>Rol:</strong> ${userData.rol || ''}`;
+        document.getElementById('userRolText').innerHTML = '<strong>Rol:</strong> ' + (userData.rol || '');
 
-        // Logout
         document.getElementById('btnLogout').addEventListener('click', function(e) {
             e.preventDefault();
             localStorage.removeItem('authToken');
@@ -241,12 +295,21 @@
             window.location.href = 'login.html';
         });
 
-        // Fechas por defecto
         const hoy = new Date();
         const hace30Dias = new Date();
         hace30Dias.setDate(hoy.getDate() - 30);
-        document.getElementById('topInicio').value = hace30Dias.toISOString().split('T')[0];
-        document.getElementById('topFin').value = hoy.toISOString().split('T')[0];
+        
+        const hoyStr = hoy.toISOString().split('T')[0];
+        const hace30DiasStr = hace30Dias.toISOString().split('T')[0];
+        
+        document.getElementById('fechaInicioVentas').value = hace30DiasStr;
+        document.getElementById('fechaFinVentas').value = hoyStr;
+        document.getElementById('fechaInicioCompras').value = hace30DiasStr;
+        document.getElementById('fechaFinCompras').value = hoyStr;
+        document.getElementById('topInicio').value = hace30DiasStr;
+        document.getElementById('topFin').value = hoyStr;
+        document.getElementById('utilidadInicio').value = hace30DiasStr;
+        document.getElementById('utilidadFin').value = hoyStr;
     </script>
 </body>
 </html>

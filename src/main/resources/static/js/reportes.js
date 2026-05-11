@@ -1,9 +1,13 @@
 // ============================================
-// reportes.js - Generación de Reportes
+// reportes.js - Gestión de Reportes
 // Papelería App
 // ============================================
 
 const API_BASE_URL = 'http://localhost:8085/api';
+let tablaTopProductos = null;
+let tablaStockBajo = null;
+let tablaVentas = null;
+let tablaCompras = null;
 
 function getAuthToken() {
     return localStorage.getItem('authToken');
@@ -13,198 +17,333 @@ function getHeaders() {
     const token = getAuthToken();
     return {
         'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
+        'Authorization': token ? 'Bearer ' + token : ''
     };
 }
 
-function generarReporteVentasPDF() {
-    const inicio = document.getElementById('fechaInicio')?.value;
-    const fin = document.getElementById('fechaFin')?.value;
-    if (inicio && fin) {
-        window.open(`${API_BASE_URL}/reportes/ventas/pdf?inicio=${inicio}&fin=${fin}`, '_blank');
-    } else {
-        alert('Seleccione las fechas de inicio y fin');
-    }
-}
-
-function generarReporteVentasExcel() {
-    const inicio = document.getElementById('fechaInicio')?.value;
-    const fin = document.getElementById('fechaFin')?.value;
-    if (inicio && fin) {
-        window.open(`${API_BASE_URL}/reportes/ventas/excel?inicio=${inicio}&fin=${fin}`, '_blank');
-    } else {
-        alert('Seleccione las fechas de inicio y fin');
-    }
-}
-
-function generarReporteInventarioPDF() {
-    window.open(`${API_BASE_URL}/reportes/inventario/pdf`, '_blank');
-}
-
-function generarReporteInventarioExcel() {
-    window.open(`${API_BASE_URL}/reportes/inventario/excel`, '_blank');
-}
-
-async function cargarTopProductos() {
-    let inicio = document.getElementById('topInicio')?.value;
-    let fin = document.getElementById('topFin')?.value;
+function mostrarAlerta(mensaje, tipo) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-' + tipo + ' alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.style.minWidth = '300px';
+    alertDiv.style.textAlign = 'center';
+    alertDiv.innerHTML = mensaje + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    document.body.appendChild(alertDiv);
     
-    if (!inicio) {
-        const hoy = new Date();
-        const hace30Dias = new Date();
-        hace30Dias.setDate(hoy.getDate() - 30);
-        inicio = hace30Dias.toISOString().split('T')[0];
-        fin = hoy.toISOString().split('T')[0];
-        if (document.getElementById('topInicio')) document.getElementById('topInicio').value = inicio;
-        if (document.getElementById('topFin')) document.getElementById('topFin').value = fin;
-    }
-    
+    setTimeout(function() {
+        if (alertDiv) alertDiv.remove();
+    }, 3000);
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+async function cargarResumen() {
     try {
-        const response = await fetch(`${API_BASE_URL}/ventas/top-productos?inicio=${inicio}&fin=${fin}`, { headers: getHeaders() });
+        const response = await fetch(API_BASE_URL + '/reportes/resumen', { headers: getHeaders() });
         if (response.ok) {
-            const productos = await response.json();
-            const tbody = document.querySelector('#tablaTopProductos tbody');
-            if (tbody) {
-                tbody.innerHTML = '';
-                productos.forEach(p => {
-                    tbody.innerHTML += `<tr>
-                        <td>${p.nombre || ''}</td>
-                        <td>${p.totalVendido || 0}</td>
-                    </tr>`;
-                });
-            }
-            
-            // También actualizar gráfico si existe
-            const ctx = document.getElementById('topProductosChart');
-            if (ctx && productos.length > 0) {
-                const existingChart = Chart.getChart(ctx);
-                if (existingChart) existingChart.destroy();
-                
-                const top5 = productos.slice(0, 5);
-                new Chart(ctx, {
-                    type: 'pie',
-                    data: {
-                        labels: top5.map(p => p.nombre),
-                        datasets: [{
-                            data: top5.map(p => p.totalVendido),
-                            backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: { legend: { position: 'bottom' } }
-                    }
-                });
+            const data = await response.json();
+            const container = document.getElementById('resumenContainer');
+            if (container) {
+                container.innerHTML = 
+                    '<div class="col-md-3">' +
+                        '<div class="card resumen-card card-ventas">' +
+                            '<div class="card-body">' +
+                                '<h6 class="text-muted">Ventas Hoy</h6>' +
+                                '<h3>$' + parseFloat(data.ventasHoy || 0).toFixed(2) + '</h3>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="col-md-3">' +
+                        '<div class="card resumen-card card-ventas">' +
+                            '<div class="card-body">' +
+                                '<h6 class="text-muted">Ventas del Mes</h6>' +
+                                '<h3>$' + parseFloat(data.ventasMes || 0).toFixed(2) + '</h3>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="col-md-3">' +
+                        '<div class="card resumen-card card-compras">' +
+                            '<div class="card-body">' +
+                                '<h6 class="text-muted">Compras Hoy</h6>' +
+                                '<h3>$' + parseFloat(data.comprasHoy || 0).toFixed(2) + '</h3>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="col-md-3">' +
+                        '<div class="card resumen-card card-compras">' +
+                            '<div class="card-body">' +
+                                '<h6 class="text-muted">Compras del Mes</h6>' +
+                                '<h3>$' + parseFloat(data.comprasMes || 0).toFixed(2) + '</h3>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
             }
         }
     } catch (error) {
-        console.error('Error cargando top productos:', error);
+        console.error('Error cargando resumen:', error);
     }
 }
 
-async function cargarUtilidades() {
-    const inicio = document.getElementById('utilidadInicio')?.value;
-    const fin = document.getElementById('utilidadFin')?.value;
+async function cargarReporteVentas() {
+    const inicio = document.getElementById('fechaInicioVentas').value;
+    const fin = document.getElementById('fechaFinVentas').value;
     
     if (!inicio || !fin) {
-        alert('Seleccione las fechas de inicio y fin');
+        mostrarAlerta('Seleccione las fechas de inicio y fin', 'warning');
         return;
     }
     
     try {
-        const response = await fetch(`${API_BASE_URL}/reportes/utilidades?inicio=${inicio}&fin=${fin}`, { headers: getHeaders() });
+        const response = await fetch(API_BASE_URL + '/reportes/ventas?inicio=' + inicio + '&fin=' + fin, { headers: getHeaders() });
+        if (response.ok) {
+            const ventas = await response.json();
+            const container = document.getElementById('tablaVentasContainer');
+            
+            if (tablaVentas) {
+                tablaVentas.destroy();
+            }
+            
+            container.innerHTML = '<table id="tablaVentas" class="table table-striped">' +
+                '<thead>' +
+                '<tr><th>ID</th><th>Fecha</th><th>Cliente</th><th>Vendedor</th><th>Total</th><th>Método Pago</th>' +
+                '</thead><tbody></tbody></table>';
+            
+            tablaVentas = $('#tablaVentas').DataTable({
+                data: ventas,
+                columns: [
+                    { data: 'fecha' },
+                    { data: 'cantidadVentas' },
+                    { data: 'totalIngresos', render: function(data) { return '$' + parseFloat(data).toFixed(2); } },
+                    { data: 'totalUtilidad', render: function(data) { return '$' + parseFloat(data).toFixed(2); } }
+                ],
+                language: {
+                    "decimal": "",
+                    "emptyTable": "No hay datos disponibles",
+                    "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+                    "infoFiltered": "(filtrado de _MAX_ registros totales)",
+                    "lengthMenu": "Mostrar _MENU_ registros",
+                    "loadingRecords": "Cargando...",
+                    "processing": "Procesando...",
+                    "search": "Buscar:",
+                    "zeroRecords": "No se encontraron resultados",
+                    "paginate": {
+                        "first": "Primero",
+                        "last": "Último",
+                        "next": "Siguiente",
+                        "previous": "Anterior"
+                    }
+                },
+                order: [[0, 'desc']]
+            });
+        }
+    } catch (error) {
+        console.error('Error cargando reporte de ventas:', error);
+    }
+}
+
+function generarReporteVentasPDF() {
+    const inicio = document.getElementById('fechaInicioVentas').value;
+    const fin = document.getElementById('fechaFinVentas').value;
+    if (inicio && fin) {
+        window.open(API_BASE_URL + '/reportes/ventas/pdf?inicio=' + inicio + '&fin=' + fin, '_blank');
+    } else {
+        mostrarAlerta('Seleccione las fechas de inicio y fin', 'warning');
+    }
+}
+
+function generarReporteComprasPDF() {
+    const inicio = document.getElementById('fechaInicioCompras').value;
+    const fin = document.getElementById('fechaFinCompras').value;
+    if (inicio && fin) {
+        window.open(API_BASE_URL + '/reportes/compras/pdf?inicio=' + inicio + '&fin=' + fin, '_blank');
+    } else {
+        mostrarAlerta('Seleccione las fechas de inicio y fin', 'warning');
+    }
+}
+
+async function cargarTopProductos() {
+    const inicio = document.getElementById('topInicio').value;
+    const fin = document.getElementById('topFin').value;
+    const limit = document.getElementById('topLimit').value || 10;
+    
+    if (!inicio || !fin) {
+        mostrarAlerta('Seleccione las fechas', 'warning');
+        return;
+    }
+    
+    try {
+        const response = await fetch(API_BASE_URL + '/reportes/productos/mas-vendidos?inicio=' + inicio + '&fin=' + fin + '&limit=' + limit, { headers: getHeaders() });
+        if (response.ok) {
+            const productos = await response.json();
+            
+            if (tablaTopProductos) {
+                tablaTopProductos.destroy();
+            }
+            
+            tablaTopProductos = $('#tablaTopProductos').DataTable({
+                data: productos,
+                columns: [
+                    { data: 'nombre' },
+                    { data: 'categoria', defaultContent: '-' },
+                    { data: 'cantidadVendida', defaultContent: '0' },
+                    { data: 'totalVendido', render: function(data) { return '$' + parseFloat(data).toFixed(2); } }
+                ],
+                language: {
+                    "decimal": "",
+                    "emptyTable": "No hay datos disponibles",
+                    "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+                    "lengthMenu": "Mostrar _MENU_ registros",
+                    "loadingRecords": "Cargando...",
+                    "search": "Buscar:",
+                    "zeroRecords": "No se encontraron resultados",
+                    "paginate": {
+                        "first": "Primero",
+                        "last": "Último",
+                        "next": "Siguiente",
+                        "previous": "Anterior"
+                    }
+                },
+                order: [[2, 'desc']]
+            });
+        }
+    } catch (error) {
+        console.error('Error cargando top productos:', error);
+        mostrarAlerta('Error al cargar productos', 'danger');
+    }
+}
+
+async function cargarStockBajo() {
+    try {
+        const response = await fetch(API_BASE_URL + '/reportes/productos/stock-bajo', { headers: getHeaders() });
+        if (response.ok) {
+            const productos = await response.json();
+            
+            if (tablaStockBajo) {
+                tablaStockBajo.destroy();
+            }
+            
+            tablaStockBajo = $('#tablaStockBajo').DataTable({
+                data: productos,
+                columns: [
+                    { data: 'nombre' },
+                    { data: 'categoria', defaultContent: '-' },
+                    { data: 'stockActual', render: function(data) { 
+                        return '<span class="text-danger fw-bold">' + data + '</span>'; 
+                    } },
+                    { data: 'stockMinimo' }
+                ],
+                language: {
+                    "decimal": "",
+                    "emptyTable": "No hay productos con stock bajo",
+                    "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+                    "lengthMenu": "Mostrar _MENU_ registros",
+                    "loadingRecords": "Cargando...",
+                    "search": "Buscar:",
+                    "zeroRecords": "No se encontraron resultados",
+                    "paginate": {
+                        "first": "Primero",
+                        "last": "Último",
+                        "next": "Siguiente",
+                        "previous": "Anterior"
+                    }
+                },
+                order: [[2, 'asc']]
+            });
+        }
+    } catch (error) {
+        console.error('Error cargando stock bajo:', error);
+    }
+}
+
+async function cargarUtilidades() {
+    const inicio = document.getElementById('utilidadInicio').value;
+    const fin = document.getElementById('utilidadFin').value;
+    
+    if (!inicio || !fin) {
+        mostrarAlerta('Seleccione las fechas de inicio y fin', 'warning');
+        return;
+    }
+    
+    try {
+        const response = await fetch(API_BASE_URL + '/reportes/ventas?inicio=' + inicio + '&fin=' + fin, { headers: getHeaders() });
         if (response.ok) {
             const utilidades = await response.json();
             const container = document.getElementById('resultadoUtilidades');
-            if (container) {
-                let html = `
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr><th>Fecha</th><th>Cantidad Ventas</th><th>Total Ingresos</th><th>Utilidad</th>
-                            </thead>
-                            <tbody>
-                `;
-                utilidades.forEach(u => {
-                    html += `<tr>
-                        <td>${u.fecha || ''}</td>
-                        <td>${u.cantidadVentas || 0}</td>
-                        <td>$${parseFloat(u.totalIngresos || 0).toFixed(2)}</td>
-                        <td>$${parseFloat(u.totalUtilidad || 0).toFixed(2)}</td>
-                    </tr>`;
-                });
-                html += '</tbody></table></div>';
-                container.innerHTML = html;
+            
+            let totalIngresos = 0;
+            let totalUtilidad = 0;
+            
+            let html = '<div class="table-responsive">' +
+                '<table class="table table-striped">' +
+                '<thead>' +
+                '<tr><th>Fecha</th><th>Cantidad Ventas</th><th>Total Ingresos</th><th>Utilidad</th>' +
+                '</thead><tbody>';
+            
+            for (var i = 0; i < utilidades.length; i++) {
+                const u = utilidades[i];
+                totalIngresos = totalIngresos + parseFloat(u.totalIngresos || 0);
+                totalUtilidad = totalUtilidad + parseFloat(u.totalUtilidad || 0);
+                html = html + '<tr>' +
+                    '<td>' + (u.fecha || '') + '</td>' +
+                    '<td>' + (u.cantidadVentas || 0) + '</td>' +
+                    '<td>$' + parseFloat(u.totalIngresos || 0).toFixed(2) + '</td>' +
+                    '<td>$' + parseFloat(u.totalUtilidad || 0).toFixed(2) + '</td>' +
+                    '</tr>';
             }
+            
+            html = html + '</tbody></table></div>';
+            html = html + '<div class="alert alert-info mt-3">' +
+                '<strong>Resumen del período:</strong><br>' +
+                'Total Ingresos: $' + totalIngresos.toFixed(2) + '<br>' +
+                'Total Utilidad: $' + totalUtilidad.toFixed(2) + '<br>' +
+                'Margen de Utilidad: ' + (totalIngresos > 0 ? ((totalUtilidad / totalIngresos) * 100).toFixed(2) : '0') + '%' +
+                '</div>';
+            
+            container.innerHTML = html;
         }
     } catch (error) {
         console.error('Error cargando utilidades:', error);
+        mostrarAlerta('Error al cargar utilidades', 'danger');
     }
 }
 
-let ventasChart = null;
-
-async function cargarGraficoVentas() {
-    const hoy = new Date();
-    const hace7Dias = new Date();
-    hace7Dias.setDate(hoy.getDate() - 7);
+document.addEventListener('DOMContentLoaded', function() {
+    const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
     
-    const inicio = hace7Dias.toISOString().split('T')[0];
-    const fin = hoy.toISOString().split('T')[0];
+    console.log('Usuario logueado en reportes:', userData);
     
-    try {
-        const response = await fetch(`${API_BASE_URL}/reportes/utilidades?inicio=${inicio}&fin=${fin}`, { headers: getHeaders() });
-        if (response.ok) {
-            const data = await response.json();
-            
-            const ctx = document.getElementById('ventasChart');
-            if (ctx) {
-                if (ventasChart) ventasChart.destroy();
-                
-                ventasChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: data.map(u => u.fecha),
-                        datasets: [
-                            {
-                                label: 'Ingresos',
-                                data: data.map(u => u.totalIngresos || 0),
-                                borderColor: '#667eea',
-                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                                fill: true,
-                                tension: 0.3
-                            },
-                            {
-                                label: 'Utilidad',
-                                data: data.map(u => u.totalUtilidad || 0),
-                                borderColor: '#1cc88a',
-                                backgroundColor: 'rgba(28, 200, 138, 0.1)',
-                                fill: true,
-                                tension: 0.3
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        plugins: {
-                            legend: { position: 'top' }
-                        }
-                    }
-                });
-            }
+    if (!getAuthToken()) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    const rolesPermitidos = ['ADMIN', 'admin', 'VENDEDOR', 'vendedor', 'COMPRAS', 'compras'];
+    let tienePermiso = false;
+    for (var i = 0; i < rolesPermitidos.length; i++) {
+        if (userData.rol === rolesPermitidos[i]) {
+            tienePermiso = true;
+            break;
         }
-    } catch (error) {
-        console.error('Error cargando gráfico de ventas:', error);
     }
-}
+    
+    if (tienePermiso) {
+        cargarResumen();
+        cargarTopProductos();
+        cargarStockBajo();
+    } else {
+        console.log('Usuario sin permiso para ver reportes');
+    }
+});
 
-// Exponer funciones globales
 window.generarReporteVentasPDF = generarReporteVentasPDF;
-window.generarReporteVentasExcel = generarReporteVentasExcel;
-window.generarReporteInventarioPDF = generarReporteInventarioPDF;
-window.generarReporteInventarioExcel = generarReporteInventarioExcel;
+window.generarReporteComprasPDF = generarReporteComprasPDF;
 window.cargarTopProductos = cargarTopProductos;
 window.cargarUtilidades = cargarUtilidades;
-window.cargarGraficoVentas = cargarGraficoVentas;

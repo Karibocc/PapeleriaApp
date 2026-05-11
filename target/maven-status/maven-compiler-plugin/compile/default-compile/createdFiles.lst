@@ -38,6 +38,7 @@ com\papeleria\entity\Categoria.class
 com\papeleria\patterns\behavioral\command\RegistrarVentaCommand.class
 com\papeleria\patterns\behavioral\iterator\VentaIterator.class
 com\papeleria\repository\ConfiguracionRepository.class
+com\papeleria\repository\ReporteRepository.class
 com\papeleria\entity\EstadoUsuario.class
 com\papeleria\service\patterns\composite\CategoriaComponent.class
 com\papeleria\entity\Cliente.class
@@ -45,6 +46,7 @@ com\papeleria\dto\CompraRequestDTO.class
 com\papeleria\service\patterns\decorator\ReporteFiltroFecha.class
 com\papeleria\entity\Compra.class
 com\papeleria\service\patterns\facade\VentaFacade.class
+com\papeleria\dto\ReporteUtilidadDTO.class
 com\papeleria\dto\ReporteVentaDTO.class
 com\papeleria\security\jwt\JwtAuthenticationFilter.class
 com\papeleria\service\patterns\bridge\Reporte.class
@@ -63,6 +65,7 @@ com\papeleria\service\ProveedorService.class
 com\papeleria\controller\ClienteController.class
 com\papeleria\service\FacturaService.class
 com\papeleria\service\patterns\composite\CategoriaCompuesta.class
+com\papeleria\dto\ReporteCompraDTO.class
 com\papeleria\patterns\behavioral\strategy\IVAStrategy.class
 com\papeleria\repository\VentaRepository.class
 com\papeleria\service\TicketPrintService.class
@@ -96,6 +99,7 @@ com\papeleria\repository\OrigenMovimientoRepository.class
 com\papeleria\service\ReporteService.class
 com\papeleria\controller\ConfiguracionController.class
 com\papeleria\service\patterns\decorator\ReporteOrdenado.class
+com\papeleria\dto\ReporteProductoDTO.class
 com\papeleria\patterns\creational\ReporteFactory.class
 com\papeleria\service\ConfiguracionService.class
 com\papeleria\dto\CompraRequestDTO$DetalleDTO.class

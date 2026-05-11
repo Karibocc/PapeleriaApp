@@ -30,6 +30,19 @@ public interface VentaRepository extends JpaRepository<Venta, Integer> {
     @Query("SELECT DISTINCT v FROM Venta v LEFT JOIN FETCH v.detalles d WHERE v.idVenta = :id")
     Venta findByIdWithDetails(@Param("id") Integer id);
     
+    @Query("SELECT p.idProducto, p.nombre, c.nombre as categoria, SUM(d.cantidad), SUM(d.cantidad * d.precioUnitario) " +
+           "FROM Venta v JOIN v.detalles d JOIN d.producto p " +
+           "LEFT JOIN p.categoria c " +
+           "WHERE v.fechaHora BETWEEN :inicio AND :fin " +
+           "GROUP BY p.idProducto, p.nombre, c.nombre " +
+           "ORDER BY SUM(d.cantidad) DESC")
+    List<Object[]> findProductosMasVendidos(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin, org.springframework.data.domain.Pageable pageable);
+    
+    default List<Object[]> findProductosMasVendidos(LocalDateTime inicio, LocalDateTime fin, int limit) {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        return findProductosMasVendidos(inicio, fin, pageable);
+    }
+    
     @Query("SELECT new com.papeleria.dto.TopProductoDTO(p.idProducto, p.nombre, SUM(d.cantidad), SUM(d.cantidad * d.precioUnitario)) " +
            "FROM Venta v JOIN v.detalles d JOIN d.producto p " +
            "WHERE v.fechaHora BETWEEN :inicio AND :fin " +
