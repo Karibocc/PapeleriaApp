@@ -44,7 +44,8 @@ function calcularTotalVenta(venta) {
             subtotal = subtotal + (d.precioUnitario * d.cantidad - (d.descuento || 0));
         }
     }
-    return subtotal + (venta.impuesto || 0) - (venta.descuento || 0);
+    const total = subtotal + (venta.impuesto || 0) - (venta.descuento || 0);
+    return total;
 }
 
 function calcularTotales() {
@@ -386,8 +387,8 @@ function generarHTMLFactura(factura) {
     if (factura.detalles) {
         for (let i = 0; i < factura.detalles.length; i++) {
             const d = factura.detalles[i];
-            detallesHTML = detallesHTML + '<td>' +
-                '</td>' + escapeHtml(d.nombreProducto) + '</td>' +
+            detallesHTML = detallesHTML + '<tr>' +
+                '<td>' + escapeHtml(d.nombreProducto) + '</td>' +
                 '<td>' + d.cantidad + '</td>' +
                 '<td>$' + parseFloat(d.precioUnitario).toFixed(2) + '</td>' +
                 '<td>$' + parseFloat(d.subtotalLinea).toFixed(2) + '</td>' +
@@ -469,23 +470,19 @@ function enviarPorWhatsapp(idVenta) {
                 mensaje = mensaje + 'N°: ' + factura.idVenta + '\n';
                 mensaje = mensaje + 'Fecha: ' + new Date(factura.fechaEmision).toLocaleString() + '\n';
                 mensaje = mensaje + 'Cliente: ' + (factura.nombreCliente || 'Mostrador') + '\n';
-                mensaje = mensaje + '--------------------------------\n';
-                if (factura.detalles) {
-                    for (let i = 0; i < factura.detalles.length; i++) {
-                        const d = factura.detalles[i];
-                        mensaje = mensaje + d.nombreProducto + ' x' + d.cantidad + ' = $' + parseFloat(d.subtotalLinea).toFixed(2) + '\n';
-                    }
-                }
-                mensaje = mensaje + '--------------------------------\n';
-                mensaje = mensaje + 'Subtotal: $' + parseFloat(factura.subtotal).toFixed(2) + '\n';
-                mensaje = mensaje + 'Impuesto: $' + parseFloat(factura.impuesto).toFixed(2) + '\n';
                 mensaje = mensaje + 'Total: $' + parseFloat(factura.total).toFixed(2) + '\n';
-                mensaje = mensaje + 'Gracias por su compra!';
+                mensaje = mensaje + '--------------------------------\n';
+                mensaje = mensaje + 'Gracias por su compra!\n';
+                mensaje = mensaje + 'Papelería App - ' + new Date().getFullYear();
                 
-                const urlWhatsapp = 'https://wa.me/' + telefono + '?text=' + encodeURIComponent(mensaje);
+                const urlWhatsapp = 'https://api.whatsapp.com/send?phone=' + telefono + '&text=' + encodeURIComponent(mensaje);
                 window.open(urlWhatsapp, '_blank');
+                mostrarAlerta('Se abrirá WhatsApp para enviar la factura', 'success');
             })
-            .catch(function(error) { console.error('Error:', error); });
+            .catch(function(error) { 
+                console.error('Error:', error); 
+                mostrarAlerta('Error al obtener la factura', 'danger');
+            });
     }
 }
 
@@ -496,15 +493,26 @@ function enviarPorEmail(idVenta) {
         fetch(url, { headers: getHeaders() })
             .then(function(response) { return response.json(); })
             .then(function(factura) {
-                let htmlContent = generarHTMLFactura(factura);
+                let cuerpo = 'Estimado cliente,\n\n';
+                cuerpo = cuerpo + 'Adjunto encontrará el detalle de su factura.\n\n';
+                cuerpo = cuerpo + 'N° Factura: ' + factura.idVenta + '\n';
+                cuerpo = cuerpo + 'Fecha: ' + new Date(factura.fechaEmision).toLocaleString() + '\n';
+                cuerpo = cuerpo + 'Cliente: ' + (factura.nombreCliente || 'Mostrador') + '\n';
+                cuerpo = cuerpo + 'Total: $' + parseFloat(factura.total).toFixed(2) + '\n\n';
+                cuerpo = cuerpo + 'Gracias por su compra.\n';
+                cuerpo = cuerpo + 'Papelería App';
+                
                 const subject = 'Factura Papelería App #' + factura.idVenta;
-                const mailtoUrl = 'mailto:' + email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(htmlContent);
+                const mailtoUrl = 'mailto:' + email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(cuerpo);
                 window.location.href = mailtoUrl;
                 mostrarAlerta('Se abrirá su cliente de correo para enviar la factura', 'success');
             })
-            .catch(function(error) { console.error('Error:', error); });
+            .catch(function(error) { 
+                console.error('Error:', error); 
+                mostrarAlerta('Error al obtener la factura', 'danger');
+            });
     } else {
-        mostrarAlerta('Ingrese un correo válido', 'warning');
+        mostrarAlerta('Ingrese un correo electrónico válido', 'warning');
     }
 }
 
@@ -524,7 +532,20 @@ async function cargarListaVentas() {
                     { data: 'idVenta' },
                     { data: 'fechaHora', render: function(data) { return new Date(data).toLocaleString(); } },
                     { data: null, render: function(data, type, row) { return row.cliente ? row.cliente.nombre : 'Mostrador'; } },
-                    { data: null, render: function(data) { return calcularTotalVenta(data).toFixed(2); } },
+                    { 
+                        data: null, 
+                        render: function(data) {
+                            let subtotal = 0;
+                            if (data.detalles) {
+                                for (let i = 0; i < data.detalles.length; i++) {
+                                    const d = data.detalles[i];
+                                    subtotal = subtotal + (d.precioUnitario * d.cantidad - (d.descuento || 0));
+                                }
+                            }
+                            const total = subtotal + (data.impuesto || 0) - (data.descuento || 0);
+                            return total.toFixed(2);
+                        }
+                    },
                     { data: null, render: function(data, type, row) { return row.estado ? row.estado.nombre : 'Completada'; } },
                     { 
                         data: 'idVenta',

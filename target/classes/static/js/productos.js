@@ -238,7 +238,10 @@ function cargarStockBajoProductos() {
     if (tbody) {
         tbody.innerHTML = '';
         if (stockBajo.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center">No hay productos con stock bajo</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center">No hay productos con stock bajo</td>' +
+                '<td>Mostrar datos</td>' +
+                '<td>Eliminar</td>' +
+                '</tr>';
         } else {
             const maxItems = stockBajo.length > 10 ? 10 : stockBajo.length;
             for (var i = 0; i < maxItems; i++) {

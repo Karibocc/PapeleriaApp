@@ -24,6 +24,12 @@ public interface VentaRepository extends JpaRepository<Venta, Integer> {
     @Query("SELECT v FROM Venta v WHERE v.usuario.idUsuario = :idUsuario")
     List<Venta> findByUsuarioIdUsuario(@Param("idUsuario") Integer idUsuario);
     
+    @Query("SELECT DISTINCT v FROM Venta v LEFT JOIN FETCH v.detalles d")
+    List<Venta> findAllWithDetails();
+    
+    @Query("SELECT DISTINCT v FROM Venta v LEFT JOIN FETCH v.detalles d WHERE v.idVenta = :id")
+    Venta findByIdWithDetails(@Param("id") Integer id);
+    
     @Query("SELECT new com.papeleria.dto.TopProductoDTO(p.idProducto, p.nombre, SUM(d.cantidad), SUM(d.cantidad * d.precioUnitario)) " +
            "FROM Venta v JOIN v.detalles d JOIN d.producto p " +
            "WHERE v.fechaHora BETWEEN :inicio AND :fin " +
