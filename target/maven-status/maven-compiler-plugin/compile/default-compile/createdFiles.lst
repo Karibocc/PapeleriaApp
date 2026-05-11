@@ -33,6 +33,7 @@ com\papeleria\service\patterns\adapter\EmailFacturaAdapter.class
 com\papeleria\controller\ReporteController.class
 com\papeleria\service\patterns\decorator\ReporteDecorator.class
 com\papeleria\controller\VentaController.class
+com\papeleria\service\CompraService$DetalleCompraRequest.class
 com\papeleria\entity\Categoria.class
 com\papeleria\patterns\behavioral\command\RegistrarVentaCommand.class
 com\papeleria\patterns\behavioral\iterator\VentaIterator.class

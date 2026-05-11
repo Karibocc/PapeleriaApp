@@ -9,9 +9,24 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <link href="https://use.fontawesome.com/releases/v6.3.0/css/all.css" rel="stylesheet" />
+    <style>
+        .cart-item {
+            border-bottom: 1px solid #ddd;
+            padding: 10px 0;
+        }
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+        .cart-item input {
+            width: 80px;
+        }
+        .carrito-items {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
 </head>
 <body>
-    <!-- Barra de navegación superior moderna -->
     <nav class="navbar-modern navbar navbar-expand navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="index.html">
@@ -40,7 +55,6 @@
     </nav>
 
     <div class="d-flex">
-        <!-- Sidebar moderna -->
         <div class="sidebar-modern" id="sidebar" style="width: 260px; min-height: calc(100vh - 60px);">
             <div class="sidebar-heading">Módulos</div>
             <nav class="nav flex-column">
@@ -78,7 +92,6 @@
             </div>
         </div>
 
-        <!-- Contenido principal -->
         <div class="main-content flex-grow-1">
             <div class="container-fluid px-4">
                 <h1 class="mt-2 mb-4">Registrar Compra</h1>
@@ -92,25 +105,26 @@
                                 </div>
                                 <div class="card-body">
                                     <div class="input-group">
-                                        <input type="text" id="buscarProductoCompra" class="form-control" placeholder="Código de barras o nombre">
-                                        <button class="btn btn-primary-custom" onclick="buscarProductoCompra()">
+                                        <input type="text" id="buscarProducto" class="form-control" placeholder="Código de barras o nombre">
+                                        <button class="btn btn-primary-custom" id="btnBuscarProducto">
                                             <i class="fas fa-search"></i> Buscar
                                         </button>
                                     </div>
-                                    <div id="resultadoBusquedaCompra" class="mt-3"></div>
+                                    <div id="resultadoBusqueda" class="mt-3"></div>
                                 </div>
                             </div>
                             <div class="chart-card card mb-4">
                                 <div class="card-header">
-                                    <i class="fas fa-shopping-cart"></i> Productos a Comprar
+                                    <i class="fas fa-shopping-cart"></i> Carrito de Compra
                                 </div>
                                 <div class="card-body">
-                                    <div id="carritoCompraItems"></div>
+                                    <div id="carritoItems" class="carrito-items"></div>
                                     <hr>
                                     <div class="row">
-                                        <div class="col-md-6">Subtotal: $<span id="subtotalCompra">0</span></div>
-                                        <div class="col-md-6">Impuesto (19%): $<span id="impuestoCompra">0</span></div>
-                                        <div class="col-md-6"><strong>Total: $<span id="totalCompra">0</span></strong></div>
+                                        <div class="col-md-6">Subtotal: $<span id="subtotal">0</span></div>
+                                        <div class="col-md-6">Impuesto (19%): $<span id="impuesto">0</span></div>
+                                        <div class="col-md-6">Descuento: $<span id="descuentoGlobal">0</span></div>
+                                        <div class="col-md-6"><strong>Total: $<span id="total">0</span></strong></div>
                                     </div>
                                 </div>
                             </div>
@@ -123,17 +137,23 @@
                                 <div class="card-body">
                                     <div class="mb-3">
                                         <label>Proveedor</label>
-                                        <select id="proveedorCompra" class="form-control"></select>
+                                        <select id="proveedorCompra" class="form-control">
+                                            <option value="">Seleccione proveedor...</option>
+                                        </select>
                                     </div>
                                     <div class="mb-3">
-                                        <label>Número Factura</label>
+                                        <label>Número de Factura</label>
                                         <input type="text" id="numeroFactura" class="form-control">
                                     </div>
                                     <div class="mb-3">
-                                        <label>Observación</label>
-                                        <textarea id="observacionCompra" class="form-control"></textarea>
+                                        <label>Descuento Global</label>
+                                        <input type="number" id="descuentoGlobalInput" class="form-control" step="0.01" value="0">
                                     </div>
-                                    <button class="btn btn-success w-100" onclick="registrarCompra()">
+                                    <div class="mb-3">
+                                        <label>Observación</label>
+                                        <textarea id="observacionCompra" class="form-control" rows="3"></textarea>
+                                    </div>
+                                    <button class="btn btn-success w-100" id="btnRegistrarCompra">
                                         <i class="fas fa-check"></i> Registrar Compra
                                     </button>
                                 </div>
@@ -149,9 +169,19 @@
                     <div class="card-body">
                         <table id="tablaCompras" class="table table-striped">
                             <thead>
-                                <tr><th>ID</th><th>Fecha</th><th>Proveedor</th><th>Total</th><th>Estado</th>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Proveedor</th>
+                                    <th>Total</th>
+                                    <th>Acciones</th>
+                                </tr>
                             </thead>
-                            <tbody></tbody>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" class="text-center">Cargando compras...<\/td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -172,41 +202,93 @@
         </div>
     </div>
 
+    <div class="modal fade" id="productoModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productoModalLabel">Agregar Producto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="productoIdTemp">
+                    <div class="mb-3">
+                        <label class="form-label">Producto</label>
+                        <input type="text" id="productoNombreTemp" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cantidad</label>
+                        <input type="number" id="productoCantidad" class="form-control" min="1" value="1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Precio Unitario</label>
+                        <input type="number" id="productoPrecio" class="form-control" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descuento por Producto</label>
+                        <input type="number" id="productoDescuento" class="form-control" step="0.01" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="btnAgregarProductoModal">Agregar al Carrito</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-    <script src="js/api.js"></script>
     <script src="js/compras.js"></script>
     <script>
-        // Toggle sidebar
         document.getElementById('sidebarToggle').addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');
             if (sidebar.style.width === '260px') {
                 sidebar.style.width = '70px';
-                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'none');
-                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'none');
-                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '0');
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(function(span) {
+                    if (span) span.style.display = 'none';
+                });
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(function(heading) {
+                    if (heading) heading.style.display = 'none';
+                });
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(function(icon) {
+                    if (icon) icon.style.marginRight = '0';
+                });
             } else {
                 sidebar.style.width = '260px';
-                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'inline');
-                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'block');
-                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '12px');
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(function(span) {
+                    if (span) span.style.display = 'inline';
+                });
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(function(heading) {
+                    if (heading) heading.style.display = 'block';
+                });
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(function(icon) {
+                    if (icon) icon.style.marginRight = '12px';
+                });
             }
         });
 
-        // Mostrar usuario logueado
         const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        document.getElementById('userName').innerText = userData.nombreCompleto || userData.username;
+        document.getElementById('userName').innerText = userData.nombreCompleto || userData.username || 'Usuario';
         document.getElementById('userRolBadge').innerText = userData.rol || '';
-        document.getElementById('userRolText').innerHTML = `<strong>Rol:</strong> ${userData.rol || ''}`;
+        document.getElementById('userRolText').innerHTML = '<strong>Rol:</strong> ' + (userData.rol || '');
 
-        // Verificar permisos para mostrar formulario de compra (Admin o Bodega)
-        if (userData.rol === 'ADMIN' || userData.rol === 'BODEGA') {
+        const rolesPermitidos = ['ADMIN', 'admin', 'COMPRAS', 'compras'];
+        let tienePermiso = false;
+        for (let i = 0; i < rolesPermitidos.length; i++) {
+            if (userData.rol === rolesPermitidos[i]) {
+                tienePermiso = true;
+                break;
+            }
+        }
+        
+        if (tienePermiso) {
             document.getElementById('formCompra').style.display = 'block';
+        } else {
+            document.getElementById('formCompra').style.display = 'none';
         }
 
-        // Logout
         document.getElementById('btnLogout').addEventListener('click', function(e) {
             e.preventDefault();
             localStorage.removeItem('authToken');

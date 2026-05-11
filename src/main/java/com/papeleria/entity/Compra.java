@@ -19,6 +19,18 @@ public class Compra {
     @Column(name = "numero_factura")
     private String numeroFactura;
 
+    @Column(nullable = false)
+    private BigDecimal subtotal = BigDecimal.ZERO;
+
+    @Column(nullable = false)
+    private BigDecimal impuesto = BigDecimal.ZERO;
+
+    @Column(nullable = false)
+    private BigDecimal descuento = BigDecimal.ZERO;
+
+    @Column(nullable = false)
+    private BigDecimal total = BigDecimal.ZERO;
+
     @ManyToOne
     @JoinColumn(name = "id_proveedor", nullable = false)
     private Proveedor proveedor;
@@ -27,41 +39,98 @@ public class Compra {
     @JoinColumn(name = "id_usuario", nullable = false)
     private Usuario usuario;
 
-    private BigDecimal impuesto = BigDecimal.ZERO;
     private String observacion;
 
-    @ManyToOne
-    @JoinColumn(name = "id_estado_documento", nullable = false)
-    private EstadoDocumento estado;
-
-    @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DetalleCompra> detalles = new ArrayList<>();
 
-    // Getters y Setters
-    public Integer getIdCompra() { return idCompra; }
-    public void setIdCompra(Integer idCompra) { this.idCompra = idCompra; }
+    public Compra() {}
 
-    public LocalDateTime getFechaHora() { return fechaHora; }
-    public void setFechaHora(LocalDateTime fechaHora) { this.fechaHora = fechaHora; }
+    public Integer getIdCompra() { 
+        return idCompra; 
+    }
+    
+    public void setIdCompra(Integer idCompra) { 
+        this.idCompra = idCompra; 
+    }
 
-    public String getNumeroFactura() { return numeroFactura; }
-    public void setNumeroFactura(String numeroFactura) { this.numeroFactura = numeroFactura; }
+    public LocalDateTime getFechaHora() { 
+        return fechaHora; 
+    }
+    
+    public void setFechaHora(LocalDateTime fechaHora) { 
+        this.fechaHora = fechaHora; 
+    }
 
-    public Proveedor getProveedor() { return proveedor; }
-    public void setProveedor(Proveedor proveedor) { this.proveedor = proveedor; }
+    public String getNumeroFactura() { 
+        return numeroFactura; 
+    }
+    
+    public void setNumeroFactura(String numeroFactura) { 
+        this.numeroFactura = numeroFactura; 
+    }
 
-    public Usuario getUsuario() { return usuario; }
-    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    public BigDecimal getSubtotal() { 
+        return subtotal; 
+    }
+    
+    public void setSubtotal(BigDecimal subtotal) { 
+        this.subtotal = subtotal; 
+    }
 
-    public BigDecimal getImpuesto() { return impuesto; }
-    public void setImpuesto(BigDecimal impuesto) { this.impuesto = impuesto; }
+    public BigDecimal getImpuesto() { 
+        return impuesto; 
+    }
+    
+    public void setImpuesto(BigDecimal impuesto) { 
+        this.impuesto = impuesto; 
+    }
 
-    public String getObservacion() { return observacion; }
-    public void setObservacion(String observacion) { this.observacion = observacion; }
+    public BigDecimal getDescuento() { 
+        return descuento; 
+    }
+    
+    public void setDescuento(BigDecimal descuento) { 
+        this.descuento = descuento; 
+    }
 
-    public EstadoDocumento getEstado() { return estado; }
-    public void setEstado(EstadoDocumento estado) { this.estado = estado; }
+    public BigDecimal getTotal() { 
+        return total; 
+    }
+    
+    public void setTotal(BigDecimal total) { 
+        this.total = total; 
+    }
 
-    public List<DetalleCompra> getDetalles() { return detalles; }
-    public void setDetalles(List<DetalleCompra> detalles) { this.detalles = detalles; }
+    public Proveedor getProveedor() { 
+        return proveedor; 
+    }
+    
+    public void setProveedor(Proveedor proveedor) { 
+        this.proveedor = proveedor; 
+    }
+
+    public Usuario getUsuario() { 
+        return usuario; 
+    }
+    
+    public void setUsuario(Usuario usuario) { 
+        this.usuario = usuario; 
+    }
+
+    public String getObservacion() { 
+        return observacion; 
+    }
+    
+    public void setObservacion(String observacion) { 
+        this.observacion = observacion; 
+    }
+
+    public List<DetalleCompra> getDetalles() { 
+        return detalles; 
+    }
+    
+    public void setDetalles(List<DetalleCompra> detalles) { 
+        this.detalles = detalles; 
+    }
 }
