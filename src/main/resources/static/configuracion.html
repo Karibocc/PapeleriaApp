@@ -7,11 +7,21 @@
     <link href="css/styles.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <link href="https://use.fontawesome.com/releases/v6.3.0/css/all.css" rel="stylesheet" />
+    <style>
+        .config-card {
+            margin-bottom: 20px;
+        }
+        .btn-guardar {
+            margin-left: 10px;
+        }
+        .input-group .btn {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+    </style>
 </head>
 <body>
-    <!-- Barra de navegación superior moderna -->
     <nav class="navbar-modern navbar navbar-expand navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="index.html">
@@ -40,7 +50,6 @@
     </nav>
 
     <div class="d-flex">
-        <!-- Sidebar moderna -->
         <div class="sidebar-modern" id="sidebar" style="width: 260px; min-height: calc(100vh - 60px);">
             <div class="sidebar-heading">Módulos</div>
             <nav class="nav flex-column">
@@ -78,54 +87,106 @@
             </div>
         </div>
 
-        <!-- Contenido principal -->
         <div class="main-content flex-grow-1">
             <div class="container-fluid px-4">
                 <h1 class="mt-2 mb-4">Configuración del Sistema</h1>
 
-                <div class="chart-card card mb-4">
-                    <div class="card-header">
-                        <i class="fas fa-sliders-h"></i> Configuración General
-                    </div>
-                    <div class="card-body">
-                        <form id="configForm">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label>Nombre del Negocio</label>
-                                    <input type="text" id="nombre_negocio" class="form-control">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="chart-card card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-building"></i> Información de la Empresa
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre del Negocio</label>
+                                    <div class="input-group">
+                                        <input type="text" id="nombre_negocio" class="form-control">
+                                        <button class="btn btn-primary btn-guardar" onclick="guardarConfig('nombre_negocio')">Guardar</button>
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label>NIT</label>
-                                    <input type="text" id="nit_negocio" class="form-control">
+                                <div class="mb-3">
+                                    <label class="form-label">NIT</label>
+                                    <div class="input-group">
+                                        <input type="text" id="nit_negocio" class="form-control">
+                                        <button class="btn btn-primary btn-guardar" onclick="guardarConfig('nit_negocio')">Guardar</button>
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label>Teléfono</label>
-                                    <input type="text" id="telefono" class="form-control">
+                                <div class="mb-3">
+                                    <label class="form-label">Teléfono</label>
+                                    <div class="input-group">
+                                        <input type="text" id="telefono" class="form-control">
+                                        <button class="btn btn-primary btn-guardar" onclick="guardarConfig('telefono')">Guardar</button>
+                                    </div>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label>Correo Electrónico</label>
-                                    <input type="email" id="correo_negocio" class="form-control">
+                                <div class="mb-3">
+                                    <label class="form-label">Correo Electrónico</label>
+                                    <div class="input-group">
+                                        <input type="email" id="correo_negocio" class="form-control">
+                                        <button class="btn btn-primary btn-guardar" onclick="guardarConfig('correo_negocio')">Guardar</button>
+                                    </div>
                                 </div>
-                                <div class="col-md-12 mb-3">
-                                    <label>Dirección</label>
-                                    <textarea id="direccion_negocio" class="form-control"></textarea>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label>Porcentaje de IVA</label>
-                                    <input type="number" id="iva_porcentaje" class="form-control" step="0.01">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label>Impuesto Incluido en Precios</label>
-                                    <select id="iva_incluido" class="form-control">
-                                        <option value="true">Sí</option>
-                                        <option value="false">No</option>
-                                    </select>
+                                <div class="mb-3">
+                                    <label class="form-label">Dirección</label>
+                                    <div class="input-group">
+                                        <textarea id="direccion_negocio" class="form-control" rows="2"></textarea>
+                                        <button class="btn btn-primary btn-guardar" onclick="guardarConfig('direccion_negocio')">Guardar</button>
+                                    </div>
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-primary-custom">
-                                <i class="fas fa-save"></i> Guardar Configuración
-                            </button>
-                        </form>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="chart-card card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-calculator"></i> Configuración de Impuestos
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Porcentaje de IVA (%)</label>
+                                    <div class="input-group">
+                                        <input type="number" id="iva_porcentaje" class="form-control" step="0.01">
+                                        <button class="btn btn-primary btn-guardar" onclick="guardarConfig('iva_porcentaje')">Guardar</button>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">IVA incluido en precios</label>
+                                    <div class="input-group">
+                                        <select id="iva_incluido" class="form-control">
+                                            <option value="true">Sí</option>
+                                            <option value="false">No</option>
+                                        </select>
+                                        <button class="btn btn-primary btn-guardar" onclick="guardarConfig('iva_incluido')">Guardar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-card card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-print"></i> Configuración de Impresión
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Impresora por defecto</label>
+                                    <div class="input-group">
+                                        <input type="text" id="impresora_default" class="form-control">
+                                        <button class="btn btn-primary btn-guardar" onclick="guardarConfig('impresora_default')">Guardar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-card card mb-4">
+                    <div class="card-header">
+                        <i class="fas fa-sync-alt"></i> Inicializar Configuraciones
+                    </div>
+                    <div class="card-body">
+                        <p class="text-warning">Esta acción restaurará los valores por defecto de todas las configuraciones.</p>
+                        <button class="btn btn-warning" onclick="inicializarConfiguraciones()">
+                            <i class="fas fa-refresh"></i> Restaurar Valores por Defecto
+                        </button>
                     </div>
                 </div>
 
@@ -136,20 +197,20 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label>Contraseña Actual</label>
+                                <label class="form-label">Contraseña Actual</label>
                                 <input type="password" id="currentPassword" class="form-control">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label>Nueva Contraseña</label>
+                                <label class="form-label">Nueva Contraseña</label>
                                 <input type="password" id="newPassword" class="form-control">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label>Confirmar Nueva Contraseña</label>
+                                <label class="form-label">Confirmar Nueva Contraseña</label>
                                 <input type="password" id="confirmNewPassword" class="form-control">
                             </div>
                             <div class="col-md-12">
-                                <button class="btn btn-warning" onclick="cambiarContrasena()">
-                                    <i class="fas fa-sync-alt"></i> Cambiar Contraseña
+                                <button class="btn btn-primary" onclick="cambiarContrasena()">
+                                    <i class="fas fa-key"></i> Cambiar Contraseña
                                 </button>
                             </div>
                         </div>
@@ -174,39 +235,44 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-    <script src="js/api.js"></script>
     <script src="js/configuracion.js"></script>
     <script>
-        // Toggle sidebar
         document.getElementById('sidebarToggle').addEventListener('click', function() {
             const sidebar = document.getElementById('sidebar');
             if (sidebar.style.width === '260px') {
                 sidebar.style.width = '70px';
-                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'none');
-                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'none');
-                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '0');
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(function(span) {
+                    if (span) span.style.display = 'none';
+                });
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(function(heading) {
+                    if (heading) heading.style.display = 'none';
+                });
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(function(icon) {
+                    if (icon) icon.style.marginRight = '0';
+                });
             } else {
                 sidebar.style.width = '260px';
-                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'inline');
-                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'block');
-                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '12px');
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(function(span) {
+                    if (span) span.style.display = 'inline';
+                });
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(function(heading) {
+                    if (heading) heading.style.display = 'block';
+                });
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(function(icon) {
+                    if (icon) icon.style.marginRight = '12px';
+                });
             }
         });
 
-        // Mostrar usuario logueado
         const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        document.getElementById('userName').innerText = userData.nombreCompleto || userData.username;
+        document.getElementById('userName').innerText = userData.nombreCompleto || userData.username || 'Usuario';
         document.getElementById('userRolBadge').innerText = userData.rol || '';
-        document.getElementById('userRolText').innerHTML = `<strong>Rol:</strong> ${userData.rol || ''}`;
+        document.getElementById('userRolText').innerHTML = '<strong>Rol:</strong> ' + (userData.rol || '');
 
-        // Verificar permisos (solo ADMIN puede ver configuración)
         if (userData.rol !== 'ADMIN') {
             window.location.href = 'index.html';
         }
 
-        // Logout
         document.getElementById('btnLogout').addEventListener('click', function(e) {
             e.preventDefault();
             localStorage.removeItem('authToken');

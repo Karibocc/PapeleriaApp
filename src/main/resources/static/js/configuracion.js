@@ -13,129 +13,157 @@ function getHeaders() {
     const token = getAuthToken();
     return {
         'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : ''
+        'Authorization': token ? 'Bearer ' + token : ''
     };
 }
 
-async function cargarConfiguracionesForm() {
+function mostrarAlerta(mensaje, tipo) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-' + tipo + ' alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+    alertDiv.style.zIndex = '9999';
+    alertDiv.style.minWidth = '300px';
+    alertDiv.style.textAlign = 'center';
+    alertDiv.innerHTML = mensaje + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(function() {
+        if (alertDiv) alertDiv.remove();
+    }, 3000);
+}
+
+async function cargarConfiguraciones() {
     try {
-        const response = await fetch(`${API_BASE_URL}/configuraciones`, { headers: getHeaders() });
+        const response = await fetch(API_BASE_URL + '/configuracion', { headers: getHeaders() });
         if (response.ok) {
             const configs = await response.json();
-            const configMap = {};
-            configs.forEach(c => { configMap[c.clave] = c.valor; });
             
-            const nombreNegocio = document.getElementById('nombre_negocio');
-            const nitNegocio = document.getElementById('nit_negocio');
-            const telefono = document.getElementById('telefono');
-            const correoNegocio = document.getElementById('correo_negocio');
-            const direccionNegocio = document.getElementById('direccion_negocio');
-            const ivaPorcentaje = document.getElementById('iva_porcentaje');
-            const ivaIncluido = document.getElementById('iva_incluido');
-            
-            if (nombreNegocio) nombreNegocio.value = configMap.nombre_negocio || '';
-            if (nitNegocio) nitNegocio.value = configMap.nit_negocio || '';
-            if (telefono) telefono.value = configMap.telefono || '';
-            if (correoNegocio) correoNegocio.value = configMap.correo_negocio || '';
-            if (direccionNegocio) direccionNegocio.value = configMap.direccion_negocio || '';
-            if (ivaPorcentaje) ivaPorcentaje.value = configMap.iva_porcentaje || '19';
-            if (ivaIncluido) ivaIncluido.value = configMap.iva_incluido === 'true' ? 'true' : 'false';
+            for (let i = 0; i < configs.length; i++) {
+                const config = configs[i];
+                const input = document.getElementById(config.clave);
+                if (input) {
+                    input.value = config.valor;
+                }
+            }
         }
     } catch (error) {
         console.error('Error cargando configuraciones:', error);
+        mostrarAlerta('Error de conexión al servidor', 'danger');
     }
 }
 
-async function guardarConfiguraciones(e) {
-    e.preventDefault();
-    
-    const configs = [
-        { clave: 'nombre_negocio', valor: document.getElementById('nombre_negocio')?.value || '' },
-        { clave: 'nit_negocio', valor: document.getElementById('nit_negocio')?.value || '' },
-        { clave: 'telefono', valor: document.getElementById('telefono')?.value || '' },
-        { clave: 'correo_negocio', valor: document.getElementById('correo_negocio')?.value || '' },
-        { clave: 'direccion_negocio', valor: document.getElementById('direccion_negocio')?.value || '' },
-        { clave: 'iva_porcentaje', valor: document.getElementById('iva_porcentaje')?.value || '19' },
-        { clave: 'iva_incluido', valor: document.getElementById('iva_incluido')?.value || 'false' }
-    ];
+async function guardarConfig(clave) {
+    const input = document.getElementById(clave);
+    const nuevoValor = input.value;
     
     try {
-        for (const config of configs) {
-            await fetch(`${API_BASE_URL}/configuraciones`, {
-                method: 'POST',
-                headers: getHeaders(),
-                body: JSON.stringify(config)
-            });
+        const response = await fetch(API_BASE_URL + '/configuracion/' + clave, {
+            method: 'PUT',
+            headers: getHeaders(),
+            body: JSON.stringify({ valor: nuevoValor })
+        });
+        
+        if (response.ok) {
+            mostrarAlerta('Configuración actualizada exitosamente', 'success');
+        } else {
+            const error = await response.json();
+            mostrarAlerta(error.error || 'Error al actualizar', 'danger');
         }
-        alert('Configuración guardada exitosamente');
     } catch (error) {
-        console.error('Error guardando configuración:', error);
-        alert('Error al guardar la configuración');
+        console.error('Error actualizando configuración:', error);
+        mostrarAlerta('Error de conexión al servidor', 'danger');
+    }
+}
+
+async function inicializarConfiguraciones() {
+    if (confirm('¿Está seguro de inicializar las configuraciones? Esto restaurará los valores por defecto.')) {
+        try {
+            const response = await fetch(API_BASE_URL + '/configuracion/inicializar', {
+                method: 'POST',
+                headers: getHeaders()
+            });
+            
+            if (response.ok) {
+                mostrarAlerta('Configuraciones inicializadas exitosamente', 'success');
+                await cargarConfiguraciones();
+            } else {
+                const error = await response.json();
+                mostrarAlerta(error.error || 'Error al inicializar', 'danger');
+            }
+        } catch (error) {
+            console.error('Error inicializando configuraciones:', error);
+            mostrarAlerta('Error de conexión al servidor', 'danger');
+        }
     }
 }
 
 async function cambiarContrasena() {
-    const currentPassword = document.getElementById('currentPassword')?.value;
-    const newPassword = document.getElementById('newPassword')?.value;
-    const confirmPassword = document.getElementById('confirmNewPassword')?.value;
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmNewPassword').value;
     
     if (!currentPassword || !newPassword) {
-        alert('Complete todos los campos');
+        mostrarAlerta('Complete todos los campos', 'warning');
         return;
     }
     
     if (newPassword !== confirmPassword) {
-        alert('Las contraseñas nuevas no coinciden');
+        mostrarAlerta('Las contraseñas nuevas no coinciden', 'warning');
         return;
     }
     
-    if (newPassword.length < 8) {
-        alert('La nueva contraseña debe tener al menos 8 caracteres');
+    if (newPassword.length < 6) {
+        mostrarAlerta('La nueva contraseña debe tener al menos 6 caracteres', 'warning');
         return;
     }
     
     const token = getAuthToken();
     if (!token) {
-        alert('No hay sesión activa');
+        mostrarAlerta('No hay sesión activa', 'warning');
         return;
     }
     
     try {
-        const response = await fetch(`${API_BASE_URL}/auth/cambiar-contrasena`, {
+        const response = await fetch(API_BASE_URL + '/auth/cambiar-contrasena', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': 'Bearer ' + token
             },
-            body: JSON.stringify({ oldPassword: currentPassword, newPassword: newPassword })
+            body: JSON.stringify({ 
+                oldPassword: currentPassword, 
+                newPassword: newPassword 
+            })
         });
         
         const data = await response.json();
         
         if (response.ok) {
-            alert('Contraseña cambiada exitosamente');
-            if (document.getElementById('currentPassword')) document.getElementById('currentPassword').value = '';
-            if (document.getElementById('newPassword')) document.getElementById('newPassword').value = '';
-            if (document.getElementById('confirmNewPassword')) document.getElementById('confirmNewPassword').value = '';
+            mostrarAlerta('Contraseña cambiada exitosamente', 'success');
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmNewPassword').value = '';
         } else {
-            alert(data.error || 'Error al cambiar la contraseña');
+            mostrarAlerta(data.error || 'Error al cambiar la contraseña', 'danger');
         }
     } catch (error) {
         console.error('Error cambiando contraseña:', error);
-        alert('Error de conexión');
+        mostrarAlerta('Error de conexión al servidor', 'danger');
     }
 }
 
-// Inicialización
 document.addEventListener('DOMContentLoaded', function() {
-    const configForm = document.getElementById('configForm');
-    if (configForm) {
-        configForm.addEventListener('submit', guardarConfiguraciones);
+    const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    
+    if (!getAuthToken()) {
+        window.location.href = 'login.html';
+        return;
     }
-    cargarConfiguracionesForm();
+    
+    if (userData.rol === 'ADMIN') {
+        cargarConfiguraciones();
+    }
 });
 
-// Exponer funciones globales
-window.cargarConfiguracionesForm = cargarConfiguracionesForm;
-window.guardarConfiguraciones = guardarConfiguraciones;
+window.guardarConfig = guardarConfig;
+window.inicializarConfiguraciones = inicializarConfiguraciones;
 window.cambiarContrasena = cambiarContrasena;

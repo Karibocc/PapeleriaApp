@@ -190,9 +190,9 @@
                     <div class="d-flex align-items-center justify-content-between small">
                         <div class="text-muted">Copyright &copy; Papelería App 2026</div>
                         <div>
-                            <a href="#">Política de Privacidad</a>
+                            <a href="privacidad.html">Política de Privacidad</a>
                             <span class="mx-1">&middot;</span>
-                            <a href="#">Términos y Condiciones</a>
+                            <a href="terminos.html">Términos y Condiciones</a>
                         </div>
                     </div>
                 </div>
@@ -205,5 +205,60 @@
     <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
     <script src="js/ventas.js"></script>
+    <script>
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar.style.width === '260px') {
+                sidebar.style.width = '70px';
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(function(span) {
+                    if (span) span.style.display = 'none';
+                });
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(function(heading) {
+                    if (heading) heading.style.display = 'none';
+                });
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(function(icon) {
+                    if (icon) icon.style.marginRight = '0';
+                });
+            } else {
+                sidebar.style.width = '260px';
+                document.querySelectorAll('.sidebar-modern .nav-link span').forEach(function(span) {
+                    if (span) span.style.display = 'inline';
+                });
+                document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(function(heading) {
+                    if (heading) heading.style.display = 'block';
+                });
+                document.querySelectorAll('.sidebar-modern .nav-link i').forEach(function(icon) {
+                    if (icon) icon.style.marginRight = '12px';
+                });
+            }
+        });
+
+        const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        document.getElementById('userName').innerText = userData.nombreCompleto || userData.username || 'Usuario';
+        document.getElementById('userRolBadge').innerText = userData.rol || '';
+        document.getElementById('userRolText').innerHTML = '<strong>Rol:</strong> ' + (userData.rol || '');
+
+        const rolesPermitidos = ['ADMIN', 'admin', 'ADMINISTRADOR', 'Administrador', 'VENDEDOR', 'vendedor'];
+        let tienePermisoVentas = false;
+        for (var i = 0; i < rolesPermitidos.length; i++) {
+            if (userData.rol === rolesPermitidos[i]) {
+                tienePermisoVentas = true;
+                break;
+            }
+        }
+        
+        if (tienePermisoVentas) {
+            document.getElementById('formVenta').style.display = 'block';
+        } else {
+            document.getElementById('formVenta').style.display = 'none';
+        }
+
+        document.getElementById('btnLogout').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        });
+    </script>
 </body>
 </html>

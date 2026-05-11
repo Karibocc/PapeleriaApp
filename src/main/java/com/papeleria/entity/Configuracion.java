@@ -1,6 +1,7 @@
 package com.papeleria.entity;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "configuracion")
@@ -16,16 +17,48 @@ public class Configuracion {
 
     private String descripcion;
 
-    // Getters y Setters
-    public Integer getIdConfig() { return idConfig; }
-    public void setIdConfig(Integer idConfig) { this.idConfig = idConfig; }
+    @Column(name = "fecha_actualizacion")
+    private LocalDateTime fechaActualizacion = LocalDateTime.now();
 
-    public String getClave() { return clave; }
-    public void setClave(String clave) { this.clave = clave; }
+    public Configuracion() {}
 
-    public String getValor() { return valor; }
-    public void setValor(String valor) { this.valor = valor; }
+    public Integer getIdConfig() { 
+        return idConfig; 
+    }
+    
+    public void setIdConfig(Integer idConfig) { 
+        this.idConfig = idConfig; 
+    }
 
-    public String getDescripcion() { return descripcion; }
-    public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
+    public String getClave() { 
+        return clave; 
+    }
+    
+    public void setClave(String clave) { 
+        this.clave = clave; 
+    }
+
+    public String getValor() { 
+        return valor; 
+    }
+    
+    public void setValor(String valor) { 
+        this.valor = valor; 
+    }
+
+    public String getDescripcion() { 
+        return descripcion; 
+    }
+    
+    public void setDescripcion(String descripcion) { 
+        this.descripcion = descripcion; 
+    }
+
+    public LocalDateTime getFechaActualizacion() { 
+        return fechaActualizacion; 
+    }
+    
+    public void setFechaActualizacion(LocalDateTime fechaActualizacion) { 
+        this.fechaActualizacion = fechaActualizacion; 
+    }
 }
