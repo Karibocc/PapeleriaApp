@@ -26,42 +26,94 @@ public class Proveedor {
 
     private String direccion;
 
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private EstadoProveedor estado = EstadoProveedor.activo;
+    private String estado = "activo";
 
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
-    public enum EstadoProveedor {
-        activo, inactivo
+    @Column(name = "fecha_actualizacion")
+    private LocalDateTime fechaActualizacion = LocalDateTime.now();
+
+    public Proveedor() {}
+
+    public Integer getIdProveedor() { 
+        return idProveedor; 
+    }
+    
+    public void setIdProveedor(Integer idProveedor) { 
+        this.idProveedor = idProveedor; 
     }
 
-    // Getters y Setters
-    public Integer getIdProveedor() { return idProveedor; }
-    public void setIdProveedor(Integer idProveedor) { this.idProveedor = idProveedor; }
+    public String getNombre() { 
+        return nombre; 
+    }
+    
+    public void setNombre(String nombre) { 
+        this.nombre = nombre; 
+    }
 
-    public String getNombre() { return nombre; }
-    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getNit() { 
+        return nit; 
+    }
+    
+    public void setNit(String nit) { 
+        this.nit = nit; 
+    }
 
-    public String getNit() { return nit; }
-    public void setNit(String nit) { this.nit = nit; }
+    public String getContacto() { 
+        return contacto; 
+    }
+    
+    public void setContacto(String contacto) { 
+        this.contacto = contacto; 
+    }
 
-    public String getContacto() { return contacto; }
-    public void setContacto(String contacto) { this.contacto = contacto; }
+    public String getTelefono() { 
+        return telefono; 
+    }
+    
+    public void setTelefono(String telefono) { 
+        this.telefono = telefono; 
+    }
 
-    public String getTelefono() { return telefono; }
-    public void setTelefono(String telefono) { this.telefono = telefono; }
+    public String getCorreo() { 
+        return correo; 
+    }
+    
+    public void setCorreo(String correo) { 
+        this.correo = correo; 
+    }
 
-    public String getCorreo() { return correo; }
-    public void setCorreo(String correo) { this.correo = correo; }
+    public String getDireccion() { 
+        return direccion; 
+    }
+    
+    public void setDireccion(String direccion) { 
+        this.direccion = direccion; 
+    }
 
-    public String getDireccion() { return direccion; }
-    public void setDireccion(String direccion) { this.direccion = direccion; }
+    public String getEstado() { 
+        return estado; 
+    }
+    
+    public void setEstado(String estado) { 
+        this.estado = estado; 
+    }
 
-    public EstadoProveedor getEstado() { return estado; }
-    public void setEstado(EstadoProveedor estado) { this.estado = estado; }
+    public LocalDateTime getFechaCreacion() { 
+        return fechaCreacion; 
+    }
+    
+    public void setFechaCreacion(LocalDateTime fechaCreacion) { 
+        this.fechaCreacion = fechaCreacion; 
+    }
 
-    public LocalDateTime getFechaCreacion() { return fechaCreacion; }
-    public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
+    public LocalDateTime getFechaActualizacion() { 
+        return fechaActualizacion; 
+    }
+    
+    public void setFechaActualizacion(LocalDateTime fechaActualizacion) { 
+        this.fechaActualizacion = fechaActualizacion; 
+    }
 }
