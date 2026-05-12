@@ -60,33 +60,37 @@ public class UsuarioController {
             System.out.println("=== CREAR USUARIO ===");
             System.out.println("Datos recibidos: " + usuarioData);
             
-            String username = (String) usuarioData.get("username");
-            String password = (String) usuarioData.get("password");
+            String username = (String) usuarioData.get("nombreUsuario");
+            if (username == null) username = (String) usuarioData.get("username");
+            
+            String password = (String) usuarioData.get("contrasenaHash");
+            if (password == null) password = (String) usuarioData.get("password");
+            
             String email = (String) usuarioData.get("email");
             String nombreCompleto = (String) usuarioData.get("nombreCompleto");
             String telefonoMovil = (String) usuarioData.get("telefonoMovil");
             
-            Object rolObj = usuarioData.get("rol");
-            Object estadoObj = usuarioData.get("estado");
-            
-            Integer rolId = 2;
-            Integer estadoId = 1;
-            
-            if (rolObj != null) {
-                if (rolObj instanceof Integer) {
-                    rolId = (Integer) rolObj;
-                } else if (rolObj instanceof String) {
-                    rolId = Integer.parseInt((String) rolObj);
-                }
+            // Leer idRol (puede venir como "idRol" o "rol")
+            Integer rolId = null;
+            Object idRolObj = usuarioData.get("idRol");
+            if (idRolObj == null) idRolObj = usuarioData.get("rol");
+            if (idRolObj != null) {
+                if (idRolObj instanceof Integer) rolId = (Integer) idRolObj;
+                else if (idRolObj instanceof String) rolId = Integer.parseInt((String) idRolObj);
+                else if (idRolObj instanceof Long) rolId = ((Long) idRolObj).intValue();
             }
+            if (rolId == null) rolId = 2; // por defecto VENDEDOR
             
-            if (estadoObj != null) {
-                if (estadoObj instanceof Integer) {
-                    estadoId = (Integer) estadoObj;
-                } else if (estadoObj instanceof String) {
-                    estadoId = Integer.parseInt((String) estadoObj);
-                }
+            // Leer idEstadoUsuario (puede venir como "idEstadoUsuario" o "estado")
+            Integer estadoId = null;
+            Object idEstadoObj = usuarioData.get("idEstadoUsuario");
+            if (idEstadoObj == null) idEstadoObj = usuarioData.get("estado");
+            if (idEstadoObj != null) {
+                if (idEstadoObj instanceof Integer) estadoId = (Integer) idEstadoObj;
+                else if (idEstadoObj instanceof String) estadoId = Integer.parseInt((String) idEstadoObj);
+                else if (idEstadoObj instanceof Long) estadoId = ((Long) idEstadoObj).intValue();
             }
+            if (estadoId == null) estadoId = 1; // por defecto activo
             
             if (username == null || username.trim().isEmpty()) {
                 Map<String, String> error = new HashMap<>();
@@ -172,15 +176,37 @@ public class UsuarioController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
             }
             
-            String username = (String) usuarioData.get("username");
+            // Leer campos con los nombres que envía el frontend
+            String username = (String) usuarioData.get("nombreUsuario");
+            if (username == null) username = (String) usuarioData.get("username");
+            
             String email = (String) usuarioData.get("email");
             String nombreCompleto = (String) usuarioData.get("nombreCompleto");
             String telefonoMovil = (String) usuarioData.get("telefonoMovil");
-            String password = (String) usuarioData.get("password");
+            String password = (String) usuarioData.get("contrasenaHash");
+            if (password == null) password = (String) usuarioData.get("password");
             
-            Object rolObj = usuarioData.get("rol");
-            Object estadoObj = usuarioData.get("estado");
+            // Leer idRol (puede venir como "idRol")
+            Integer rolId = null;
+            Object idRolObj = usuarioData.get("idRol");
+            if (idRolObj == null) idRolObj = usuarioData.get("rol");
+            if (idRolObj != null) {
+                if (idRolObj instanceof Integer) rolId = (Integer) idRolObj;
+                else if (idRolObj instanceof String) rolId = Integer.parseInt((String) idRolObj);
+                else if (idRolObj instanceof Long) rolId = ((Long) idRolObj).intValue();
+            }
             
+            // Leer idEstadoUsuario (puede venir como "idEstadoUsuario")
+            Integer estadoId = null;
+            Object idEstadoObj = usuarioData.get("idEstadoUsuario");
+            if (idEstadoObj == null) idEstadoObj = usuarioData.get("estado");
+            if (idEstadoObj != null) {
+                if (idEstadoObj instanceof Integer) estadoId = (Integer) idEstadoObj;
+                else if (idEstadoObj instanceof String) estadoId = Integer.parseInt((String) idEstadoObj);
+                else if (idEstadoObj instanceof Long) estadoId = ((Long) idEstadoObj).intValue();
+            }
+            
+            // Actualizar campos
             if (username != null && !username.equals(usuarioExistente.getNombreUsuario())) {
                 if (usuarioService.existeNombreUsuario(username)) {
                     Map<String, String> error = new HashMap<>();
@@ -211,49 +237,29 @@ public class UsuarioController {
                 usuarioExistente.setContrasenaHash(passwordEncoder.encode(password));
             }
             
-            if (rolObj != null) {
-                Integer rolId = null;
-                if (rolObj instanceof Integer) {
-                    rolId = (Integer) rolObj;
-                } else if (rolObj instanceof String) {
-                    rolId = Integer.parseInt((String) rolObj);
-                } else if (rolObj instanceof Long) {
-                    rolId = ((Long) rolObj).intValue();
-                }
-                
-                if (rolId != null) {
-                    Optional<RolUsuario> rolOpt = rolUsuarioRepository.findById(rolId);
-                    if (rolOpt.isPresent()) {
-                        usuarioExistente.setRol(rolOpt.get());
-                        System.out.println("Rol actualizado a ID: " + rolId);
-                    } else {
-                        Map<String, String> error = new HashMap<>();
-                        error.put("error", "Rol no encontrado con ID: " + rolId);
-                        return ResponseEntity.badRequest().body(error);
-                    }
+            // Actualizar rol
+            if (rolId != null) {
+                Optional<RolUsuario> rolOpt = rolUsuarioRepository.findById(rolId);
+                if (rolOpt.isPresent()) {
+                    usuarioExistente.setRol(rolOpt.get());
+                    System.out.println("Rol actualizado a ID: " + rolId);
+                } else {
+                    Map<String, String> error = new HashMap<>();
+                    error.put("error", "Rol no encontrado con ID: " + rolId);
+                    return ResponseEntity.badRequest().body(error);
                 }
             }
             
-            if (estadoObj != null) {
-                Integer estadoId = null;
-                if (estadoObj instanceof Integer) {
-                    estadoId = (Integer) estadoObj;
-                } else if (estadoObj instanceof String) {
-                    estadoId = Integer.parseInt((String) estadoObj);
-                } else if (estadoObj instanceof Long) {
-                    estadoId = ((Long) estadoObj).intValue();
-                }
-                
-                if (estadoId != null) {
-                    Optional<EstadoUsuario> estadoOpt = estadoUsuarioRepository.findById(estadoId);
-                    if (estadoOpt.isPresent()) {
-                        usuarioExistente.setEstado(estadoOpt.get());
-                        System.out.println("Estado actualizado a ID: " + estadoId);
-                    } else {
-                        Map<String, String> error = new HashMap<>();
-                        error.put("error", "Estado no encontrado con ID: " + estadoId);
-                        return ResponseEntity.badRequest().body(error);
-                    }
+            // Actualizar estado
+            if (estadoId != null) {
+                Optional<EstadoUsuario> estadoOpt = estadoUsuarioRepository.findById(estadoId);
+                if (estadoOpt.isPresent()) {
+                    usuarioExistente.setEstado(estadoOpt.get());
+                    System.out.println("Estado actualizado a ID: " + estadoId);
+                } else {
+                    Map<String, String> error = new HashMap<>();
+                    error.put("error", "Estado no encontrado con ID: " + estadoId);
+                    return ResponseEntity.badRequest().body(error);
                 }
             }
             

@@ -57,32 +57,30 @@ function calcularTotales() {
     
     const ivaPorcentaje = 0.19;
     const impuesto = subtotal * ivaPorcentaje;
-    const descuentoGlobal = parseFloat(document.getElementById('descuentoGlobalInput').value || 0);
+    const descuentoGlobal = parseFloat(document.getElementById('descuentoGlobalInput')?.value || 0);
     let total = subtotal + impuesto - descuentoGlobal;
     
     if (total < 0) {
         total = 0;
     }
     
-    document.getElementById('subtotal').innerText = subtotal.toFixed(2);
-    document.getElementById('impuesto').innerText = impuesto.toFixed(2);
-    document.getElementById('descuentoGlobal').innerText = descuentoGlobal.toFixed(2);
-    document.getElementById('total').innerText = total.toFixed(2);
+    const subtotalEl = document.getElementById('subtotal');
+    const impuestoEl = document.getElementById('impuesto');
+    const descuentoGlobalEl = document.getElementById('descuentoGlobal');
+    const totalEl = document.getElementById('total');
     
-    const montoPagado = parseFloat(document.getElementById('montoPagado').value || 0);
+    if (subtotalEl) subtotalEl.innerText = subtotal.toFixed(2);
+    if (impuestoEl) impuestoEl.innerText = impuesto.toFixed(2);
+    if (descuentoGlobalEl) descuentoGlobalEl.innerText = descuentoGlobal.toFixed(2);
+    if (totalEl) totalEl.innerText = total.toFixed(2);
+    
+    const montoPagado = parseFloat(document.getElementById('montoPagado')?.value || 0);
     let cambio = montoPagado - total;
-    if (cambio < 0) {
-        cambio = 0;
-    }
-    document.getElementById('cambio').value = cambio.toFixed(2);
+    if (cambio < 0) cambio = 0;
+    const cambioEl = document.getElementById('cambio');
+    if (cambioEl) cambioEl.value = cambio.toFixed(2);
     
-    return {
-        subtotal: subtotal,
-        impuesto: impuesto,
-        descuento: descuentoGlobal,
-        total: total,
-        cambio: cambio
-    };
+    return { subtotal, impuesto, descuento: descuentoGlobal, total, cambio };
 }
 
 function actualizarCarrito() {
@@ -98,23 +96,51 @@ function actualizarCarrito() {
     container.innerHTML = '';
     for (let i = 0; i < carrito.length; i++) {
         const item = carrito[i];
-        const html = '<div class="cart-item">' +
-                '<div class="row align-items-center">' +
-                    '<div class="col-5">' + escapeHtml(item.nombre) + '</div>' +
-                    '<div class="col-3">' +
-                        '<input type="number" class="form-control form-control-sm" value="' + item.cantidad + '" onchange="actualizarCantidad(' + i + ', this.value)">' +
-                    '</div>' +
-                    '<div class="col-2">$' + (item.precioVenta * item.cantidad).toFixed(2) + '</div>' +
-                    '<div class="col-2">' +
-                        '<button class="btn btn-sm btn-danger" onclick="eliminarDelCarrito(' + i + ')">' +
-                            '<i class="fas fa-trash"></i>' +
-                        '</button>' +
-                    '</div>' +
-                '</div>' +
-            '</div>';
-        container.innerHTML = container.innerHTML + html;
+        const itemTotal = item.precioVenta * item.cantidad - (item.descuento || 0);
+        const html = `<div class="cart-item">
+                <div class="row align-items-center">
+                    <div class="col-5">${escapeHtml(item.nombre)}</div>
+                    <div class="col-3">
+                        <input type="number" class="form-control form-control-sm cantidad-item" data-index="${i}" value="${item.cantidad}">
+                    </div>
+                    <div class="col-2">$${itemTotal.toFixed(2)}</div>
+                    <div class="col-2">
+                        <button class="btn btn-sm btn-danger eliminar-item" data-index="${i}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        container.innerHTML += html;
     }
+    
+    // Agregar event listeners a los inputs de cantidad
+    document.querySelectorAll('.cantidad-item').forEach(input => {
+        input.removeEventListener('change', cantidadChangeHandler);
+        input.addEventListener('change', cantidadChangeHandler);
+    });
+    document.querySelectorAll('.eliminar-item').forEach(btn => {
+        btn.removeEventListener('click', eliminarClickHandler);
+        btn.addEventListener('click', eliminarClickHandler);
+    });
+    
     calcularTotales();
+}
+
+function cantidadChangeHandler(e) {
+    const index = parseInt(e.target.dataset.index);
+    let nuevaCantidad = parseInt(e.target.value);
+    if (isNaN(nuevaCantidad) || nuevaCantidad <= 0) {
+        eliminarDelCarrito(index);
+    } else {
+        carrito[index].cantidad = nuevaCantidad;
+        actualizarCarrito();
+    }
+}
+
+function eliminarClickHandler(e) {
+    const index = parseInt(e.target.closest('.eliminar-item')?.dataset.index);
+    if (!isNaN(index)) eliminarDelCarrito(index);
 }
 
 function actualizarCantidad(index, cantidad) {
@@ -133,52 +159,35 @@ function eliminarDelCarrito(index) {
 }
 
 async function buscarProductoVenta() {
-    const busqueda = document.getElementById('buscarProducto').value;
-    console.log('Buscando producto:', busqueda);
-    
+    const busqueda = document.getElementById('buscarProducto').value.trim();
     if (!busqueda) {
         mostrarAlerta('Ingrese un código de barras o nombre', 'warning');
         return;
     }
     
+    const resultadoDiv = document.getElementById('resultadoBusqueda');
+    resultadoDiv.innerHTML = '<div class="text-center">Buscando...</div>';
+    
     try {
-        console.log('Obteniendo token...');
-        const token = getAuthToken();
-        console.log('Token existe?', token ? 'Si' : 'No');
-        
-        console.log('Fetch a:', API_BASE_URL + '/productos');
         const response = await fetch(API_BASE_URL + '/productos', { 
             method: 'GET',
             headers: getHeaders()
         });
         
-        console.log('Respuesta status:', response.status);
-        
         if (response.status === 401) {
             mostrarAlerta('Sesión expirada. Inicie sesión nuevamente.', 'warning');
             localStorage.removeItem('authToken');
             localStorage.removeItem('currentUser');
-            setTimeout(function() {
-                window.location.href = 'login.html';
-            }, 1500);
+            setTimeout(() => window.location.href = 'login.html', 1500);
             return;
         }
         
         if (response.ok) {
             const productos = await response.json();
-            console.log('Productos recibidos:', productos.length);
-            
-            const productosActivos = [];
-            for (let i = 0; i < productos.length; i++) {
-                if (productos[i].activo === true) {
-                    productosActivos.push(productos[i]);
-                }
-            }
-            console.log('Productos activos:', productosActivos.length);
+            const productosActivos = productos.filter(p => p.activo === true);
             
             let producto = null;
-            for (let i = 0; i < productosActivos.length; i++) {
-                const p = productosActivos[i];
+            for (let p of productosActivos) {
                 if ((p.codigoBarras && p.codigoBarras === busqueda) || 
                     (p.nombre && p.nombre.toLowerCase().includes(busqueda.toLowerCase()))) {
                     producto = p;
@@ -186,43 +195,32 @@ async function buscarProductoVenta() {
                 }
             }
             
-            console.log('Producto encontrado:', producto ? producto.nombre : 'No encontrado');
-            
-            const resultadoDiv = document.getElementById('resultadoBusqueda');
             if (producto && producto.stockActual > 0) {
-                resultadoDiv.innerHTML = '<div class="alert alert-success">' +
-                        '<strong>' + escapeHtml(producto.nombre) + '</strong><br>' +
-                        'Stock: ' + producto.stockActual + ' | Precio: $' + producto.precioVenta.toFixed(2) + '<br>' +
-                        '<button class="btn btn-sm btn-primary mt-2" onclick="agregarAlCarrito(' + producto.idProducto + ', \'' + escapeHtml(producto.nombre) + '\', ' + producto.precioVenta + ')">' +
-                            '<i class="fas fa-cart-plus"></i> Agregar al Carrito' +
-                        '</button>' +
-                    '</div>';
-                console.log('Producto mostrado en el DOM');
+                resultadoDiv.innerHTML = `<div class="alert alert-success">
+                        <strong>${escapeHtml(producto.nombre)}</strong><br>
+                        Stock: ${producto.stockActual} | Precio: $${producto.precioVenta.toFixed(2)}<br>
+                        <button class="btn btn-sm btn-primary mt-2" onclick="agregarAlCarrito(${producto.idProducto}, '${escapeHtml(producto.nombre)}', ${producto.precioVenta})">
+                            <i class="fas fa-cart-plus"></i> Agregar al Carrito
+                        </button>
+                    </div>`;
             } else if (producto && producto.stockActual <= 0) {
                 resultadoDiv.innerHTML = '<div class="alert alert-warning">Producto sin stock disponible</div>';
             } else {
                 resultadoDiv.innerHTML = '<div class="alert alert-danger">Producto no encontrado. Intente con otro nombre o código.</div>';
             }
         } else {
-            mostrarAlerta('Error al cargar productos. Status: ' + response.status, 'danger');
+            resultadoDiv.innerHTML = '<div class="alert alert-danger">Error al cargar productos</div>';
         }
     } catch (error) {
         console.error('Error buscando producto:', error);
-        mostrarAlerta('Error de conexión al servidor', 'danger');
+        resultadoDiv.innerHTML = '<div class="alert alert-danger">Error de conexión al servidor</div>';
     }
 }
 
 function agregarAlCarrito(id, nombre, precio) {
-    let existente = null;
-    for (let i = 0; i < carrito.length; i++) {
-        if (carrito[i].idProducto === id) {
-            existente = carrito[i];
-            break;
-        }
-    }
-    
+    const existente = carrito.find(item => item.idProducto === id);
     if (existente) {
-        existente.cantidad = existente.cantidad + 1;
+        existente.cantidad++;
     } else {
         carrito.push({ idProducto: id, nombre: nombre, precioVenta: precio, cantidad: 1, descuento: 0 });
     }
@@ -240,11 +238,8 @@ async function cargarClientesSelect() {
             const select = document.getElementById('clienteVenta');
             if (select) {
                 select.innerHTML = '<option value="">Cliente Mostrador</option>';
-                if (clientesLista && clientesLista.length > 0) {
-                    for (let i = 0; i < clientesLista.length; i++) {
-                        const c = clientesLista[i];
-                        select.innerHTML = select.innerHTML + '<option value="' + c.idCliente + '">' + escapeHtml(c.nombre) + '</option>';
-                    }
+                for (let c of clientesLista) {
+                    select.innerHTML += `<option value="${c.idCliente}">${escapeHtml(c.nombre)}</option>`;
                 }
             }
         }
@@ -260,67 +255,50 @@ async function registrarVenta() {
     }
     
     const totales = calcularTotales();
-    
     if (totales.total <= 0) {
         mostrarAlerta('El total de la venta debe ser mayor a 0', 'warning');
         return;
     }
     
-    const montoPagado = parseFloat(document.getElementById('montoPagado').value || 0);
-    
+    const montoPagado = parseFloat(document.getElementById('montoPagado')?.value || 0);
     if (montoPagado < totales.total) {
-        mostrarAlerta('El monto pagado es insuficiente. Total: $' + totales.total.toFixed(2), 'warning');
+        mostrarAlerta(`El monto pagado es insuficiente. Total: $${totales.total.toFixed(2)}`, 'warning');
         return;
     }
     
     const currentUserData = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    let idUsuario = null;
+    let idUsuario = 1;
     
     try {
         const usuariosResponse = await fetch(API_BASE_URL + '/usuarios', { headers: getHeaders() });
         if (usuariosResponse.ok) {
             const usuarios = await usuariosResponse.json();
-            let usuarioActual = null;
-            for (let i = 0; i < usuarios.length; i++) {
-                if (usuarios[i].nombreUsuario === currentUserData.username) {
-                    usuarioActual = usuarios[i];
-                    break;
-                }
-            }
-            if (usuarioActual) {
-                idUsuario = usuarioActual.idUsuario;
-            }
+            const usuarioActual = usuarios.find(u => u.nombreUsuario === currentUserData.username);
+            if (usuarioActual) idUsuario = usuarioActual.idUsuario;
         }
     } catch (error) {
         console.error('Error obteniendo usuario:', error);
     }
     
-    if (!idUsuario) {
-        idUsuario = 1;
-    }
-    
-    const detalles = [];
-    for (let i = 0; i < carrito.length; i++) {
-        detalles.push({
-            idProducto: carrito[i].idProducto,
-            cantidad: carrito[i].cantidad,
-            descuento: 0
-        });
-    }
+    const detalles = carrito.map(item => ({
+        idProducto: item.idProducto,
+        cantidad: item.cantidad,
+        descuento: 0
+    }));
     
     const venta = {
         detalles: detalles,
         descuento: totales.descuento,
         impuesto: totales.impuesto,
         montoPagado: montoPagado,
-        metodoPago: document.getElementById('metodoPago').value || 'efectivo',
-        idCliente: document.getElementById('clienteVenta').value || null,
+        metodoPago: document.getElementById('metodoPago')?.value || 'efectivo',
+        idCliente: document.getElementById('clienteVenta')?.value || null,
         idUsuario: idUsuario,
-        observacion: document.getElementById('observacionVenta').value || ''
+        observacion: document.getElementById('observacionVenta')?.value || ''
     };
     
     const btnRegistrar = document.getElementById('btnRegistrarVenta');
-    const textoOriginal = btnRegistrar ? btnRegistrar.innerHTML : '';
+    const textoOriginal = btnRegistrar?.innerHTML || '';
     if (btnRegistrar) {
         btnRegistrar.disabled = true;
         btnRegistrar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
@@ -335,12 +313,23 @@ async function registrarVenta() {
         
         if (response.ok) {
             mostrarAlerta('Venta registrada exitosamente', 'success');
+            
+            // Limpiar carrito y resetear formulario
             carrito = [];
-            actualizarCarrito();
-            document.getElementById('descuentoGlobalInput').value = '0';
-            document.getElementById('montoPagado').value = '0';
-            document.getElementById('observacionVenta').value = '';
-            document.getElementById('cambio').value = '';
+            actualizarCarrito(); // Esto llama a calcularTotales() internamente, que pondrá todo a cero
+            
+            // Resetear campos adicionales
+            const descuentoGlobalInput = document.getElementById('descuentoGlobalInput');
+            const montoPagadoInput = document.getElementById('montoPagado');
+            const observacionInput = document.getElementById('observacionVenta');
+            const clienteSelect = document.getElementById('clienteVenta');
+            
+            if (descuentoGlobalInput) descuentoGlobalInput.value = '0';
+            if (montoPagadoInput) montoPagadoInput.value = '0';
+            if (observacionInput) observacionInput.value = '';
+            if (clienteSelect) clienteSelect.value = '';
+            
+            // Recargar lista de ventas
             cargarListaVentas();
         } else {
             let mensajeError = 'Error al registrar la venta';
@@ -385,101 +374,98 @@ async function imprimirFactura(idVenta) {
 function generarHTMLFactura(factura) {
     let detallesHTML = '';
     if (factura.detalles) {
-        for (let i = 0; i < factura.detalles.length; i++) {
-            const d = factura.detalles[i];
-            detallesHTML = detallesHTML + '<tr>' +
-                '<td>' + escapeHtml(d.nombreProducto) + '</td>' +
-                '<td>' + d.cantidad + '</td>' +
-                '<td>$' + parseFloat(d.precioUnitario).toFixed(2) + '</td>' +
-                '<td>$' + parseFloat(d.subtotalLinea).toFixed(2) + '</td>' +
-                '</tr>';
+        for (let d of factura.detalles) {
+            detallesHTML += `<tr>
+                <td>${escapeHtml(d.nombreProducto)}</td>
+                <td>${d.cantidad}</td>
+                <td>$${parseFloat(d.precioUnitario).toFixed(2)}</td>
+                <td>$${parseFloat(d.subtotalLinea).toFixed(2)}</td>
+            </tr>`;
         }
     }
     
-    return '<!DOCTYPE html>' +
-        '<html>' +
-        '<head>' +
-        '<meta charset="UTF-8">' +
-        '<title>Factura #' + factura.idVenta + '</title>' +
-        '<style>' +
-        'body { font-family: Arial, sans-serif; margin: 20px; }' +
-        '.factura { max-width: 800px; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px; }' +
-        '.header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }' +
-        '.empresa { font-size: 24px; font-weight: bold; }' +
-        '.info { margin: 20px 0; }' +
-        '.info table { width: 100%; }' +
-        '.info td { border: none; padding: 5px; }' +
-        'table { width: 100%; border-collapse: collapse; }' +
-        'th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }' +
-        'th { background-color: #f2f2f2; }' +
-        '.totales { margin-top: 20px; text-align: right; }' +
-        '.totales p { margin: 5px 0; }' +
-        '.footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }' +
-        '@media print { .no-print { display: none; } }' +
-        '</style>' +
-        '</head>' +
-        '<body>' +
-        '<div class="factura">' +
-        '<div class="header">' +
-        '<div class="empresa">Papelería App</div>' +
-        '<div>Factura de Venta</div>' +
-        '<div>N° ' + factura.idVenta + '</div>' +
-        '</div>' +
-        '<div class="info">' +
-        '<tr>' +
-        '<td><td style="border: none;"><strong>Fecha:</strong> ' + new Date(factura.fechaEmision).toLocaleString() + '</td>' +
-        '<td style="border: none;"><strong>Vendedor:</strong> ' + escapeHtml(factura.nombreVendedor || '') + '</td>' +
-        '</tr>' +
-        '<tr><td style="border: none;"><strong>Cliente:</strong> ' + escapeHtml(factura.nombreCliente || 'Mostrador') + '</td>' +
-        '<td style="border: none;"><strong>Método Pago:</strong> ' + escapeHtml(factura.metodoPago || 'Efectivo') + '</td>' +
-        '</tr>' +
-        '</div>' +
-        '<table>' +
-        '<thead><tr><th>Producto</th><th>Cantidad</th><th>Precio Unitario</th><th>Subtotal</th></tr></thead>' +
-        '<tbody>' + detallesHTML + '</tbody>' +
-        '</table>' +
-        '<div class="totales">' +
-        '<p><strong>Subtotal:</strong> $' + parseFloat(factura.subtotal).toFixed(2) + '</p>' +
-        '<p><strong>Impuesto (19%):</strong> $' + parseFloat(factura.impuesto).toFixed(2) + '</p>' +
-        '<p><strong>Descuento:</strong> $' + parseFloat(factura.descuento).toFixed(2) + '</p>' +
-        '<p><strong>Total:</strong> $' + parseFloat(factura.total).toFixed(2) + '</p>' +
-        '<p><strong>Pagado:</strong> $' + parseFloat(factura.montoPagado).toFixed(2) + '</p>' +
-        '<p><strong>Cambio:</strong> $' + parseFloat(factura.cambio).toFixed(2) + '</p>' +
-        '</div>' +
-        '<div class="footer">' +
-        '<p>Gracias por su compra</p>' +
-        '<p>Copyright &copy; Papelería App ' + new Date().getFullYear() + '</p>' +
-        '</div>' +
-        '<div class="no-print" style="text-align: center; margin-top: 20px;">' +
-        '<button onclick="window.print()">Imprimir</button> ' +
-        '<button onclick="window.close()">Cerrar</button>' +
-        '</div>' +
-        '</div>' +
-        '</body>' +
-        '</html>';
+    return `<!DOCTYPE html>
+        <html>
+        <head>
+        <meta charset="UTF-8">
+        <title>Factura #${factura.idVenta}</title>
+        <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .factura { max-width: 800px; margin: 0 auto; border: 1px solid #ddd; padding: 20px; border-radius: 10px; }
+        .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+        .empresa { font-size: 24px; font-weight: bold; }
+        .info { margin: 20px 0; }
+        .info table { width: 100%; }
+        .info td { border: none; padding: 5px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .totales { margin-top: 20px; text-align: right; }
+        .totales p { margin: 5px 0; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+        @media print { .no-print { display: none; } }
+        </style>
+        </head>
+        <body>
+        <div class="factura">
+        <div class="header">
+        <div class="empresa">Papelería App</div>
+        <div>Factura de Venta</div>
+        <div>N° ${factura.idVenta}</div>
+        </div>
+        <div class="info">
+        <table><tr>
+        <td style="border: none;"><strong>Fecha:</strong> ${new Date(factura.fechaEmision).toLocaleString()}</td>
+        <td style="border: none;"><strong>Vendedor:</strong> ${escapeHtml(factura.nombreVendedor || '')}</td>
+        </tr><tr>
+        <td style="border: none;"><strong>Cliente:</strong> ${escapeHtml(factura.nombreCliente || 'Mostrador')}</td>
+        <td style="border: none;"><strong>Método Pago:</strong> ${escapeHtml(factura.metodoPago || 'Efectivo')}</td>
+        </tr></table>
+        </div>
+        <table>
+        <thead><tr><th>Producto</th><th>Cantidad</th><th>Precio Unitario</th><th>Subtotal</th></tr></thead>
+        <tbody>${detallesHTML}</tbody>
+        </table>
+        <div class="totales">
+        <p><strong>Subtotal:</strong> $${parseFloat(factura.subtotal).toFixed(2)}</p>
+        <p><strong>Impuesto (19%):</strong> $${parseFloat(factura.impuesto).toFixed(2)}</p>
+        <p><strong>Descuento:</strong> $${parseFloat(factura.descuento).toFixed(2)}</p>
+        <p><strong>Total:</strong> $${parseFloat(factura.total).toFixed(2)}</p>
+        <p><strong>Pagado:</strong> $${parseFloat(factura.montoPagado).toFixed(2)}</p>
+        <p><strong>Cambio:</strong> $${parseFloat(factura.cambio).toFixed(2)}</p>
+        </div>
+        <div class="footer">
+        <p>Gracias por su compra</p>
+        <p>Copyright &copy; Papelería App ${new Date().getFullYear()}</p>
+        </div>
+        <div class="no-print" style="text-align: center; margin-top: 20px;">
+        <button onclick="window.print()">Imprimir</button>
+        <button onclick="window.close()">Cerrar</button>
+        </div>
+        </div>
+        </body>
+        </html>`;
 }
 
 function enviarPorWhatsapp(idVenta) {
     const telefono = prompt('Ingrese el número de teléfono del cliente (con código de país):', '57');
     if (telefono) {
-        const url = API_BASE_URL + '/ventas/factura/' + idVenta;
-        fetch(url, { headers: getHeaders() })
-            .then(function(response) { return response.json(); })
-            .then(function(factura) {
-                let mensaje = '----- FACTURA Papelería App -----\n';
-                mensaje = mensaje + 'N°: ' + factura.idVenta + '\n';
-                mensaje = mensaje + 'Fecha: ' + new Date(factura.fechaEmision).toLocaleString() + '\n';
-                mensaje = mensaje + 'Cliente: ' + (factura.nombreCliente || 'Mostrador') + '\n';
-                mensaje = mensaje + 'Total: $' + parseFloat(factura.total).toFixed(2) + '\n';
-                mensaje = mensaje + '--------------------------------\n';
-                mensaje = mensaje + 'Gracias por su compra!\n';
-                mensaje = mensaje + 'Papelería App - ' + new Date().getFullYear();
-                
+        fetch(API_BASE_URL + '/ventas/factura/' + idVenta, { headers: getHeaders() })
+            .then(response => response.json())
+            .then(factura => {
+                let mensaje = `----- FACTURA Papelería App -----\n`;
+                mensaje += `N°: ${factura.idVenta}\n`;
+                mensaje += `Fecha: ${new Date(factura.fechaEmision).toLocaleString()}\n`;
+                mensaje += `Cliente: ${factura.nombreCliente || 'Mostrador'}\n`;
+                mensaje += `Total: $${parseFloat(factura.total).toFixed(2)}\n`;
+                mensaje += `--------------------------------\n`;
+                mensaje += `Gracias por su compra!\n`;
+                mensaje += `Papelería App - ${new Date().getFullYear()}`;
                 const urlWhatsapp = 'https://api.whatsapp.com/send?phone=' + telefono + '&text=' + encodeURIComponent(mensaje);
                 window.open(urlWhatsapp, '_blank');
                 mostrarAlerta('Se abrirá WhatsApp para enviar la factura', 'success');
             })
-            .catch(function(error) { 
+            .catch(error => { 
                 console.error('Error:', error); 
                 mostrarAlerta('Error al obtener la factura', 'danger');
             });
@@ -489,25 +475,21 @@ function enviarPorWhatsapp(idVenta) {
 function enviarPorEmail(idVenta) {
     const email = prompt('Ingrese el correo electrónico del cliente:', '');
     if (email && email.includes('@')) {
-        const url = API_BASE_URL + '/ventas/factura/' + idVenta;
-        fetch(url, { headers: getHeaders() })
-            .then(function(response) { return response.json(); })
-            .then(function(factura) {
-                let cuerpo = 'Estimado cliente,\n\n';
-                cuerpo = cuerpo + 'Adjunto encontrará el detalle de su factura.\n\n';
-                cuerpo = cuerpo + 'N° Factura: ' + factura.idVenta + '\n';
-                cuerpo = cuerpo + 'Fecha: ' + new Date(factura.fechaEmision).toLocaleString() + '\n';
-                cuerpo = cuerpo + 'Cliente: ' + (factura.nombreCliente || 'Mostrador') + '\n';
-                cuerpo = cuerpo + 'Total: $' + parseFloat(factura.total).toFixed(2) + '\n\n';
-                cuerpo = cuerpo + 'Gracias por su compra.\n';
-                cuerpo = cuerpo + 'Papelería App';
-                
-                const subject = 'Factura Papelería App #' + factura.idVenta;
-                const mailtoUrl = 'mailto:' + email + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(cuerpo);
+        fetch(API_BASE_URL + '/ventas/factura/' + idVenta, { headers: getHeaders() })
+            .then(response => response.json())
+            .then(factura => {
+                let cuerpo = `Estimado cliente,\n\nAdjunto encontrará el detalle de su factura.\n\n`;
+                cuerpo += `N° Factura: ${factura.idVenta}\n`;
+                cuerpo += `Fecha: ${new Date(factura.fechaEmision).toLocaleString()}\n`;
+                cuerpo += `Cliente: ${factura.nombreCliente || 'Mostrador'}\n`;
+                cuerpo += `Total: $${parseFloat(factura.total).toFixed(2)}\n\n`;
+                cuerpo += `Gracias por su compra.\nPapelería App`;
+                const subject = `Factura Papelería App #${factura.idVenta}`;
+                const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(cuerpo)}`;
                 window.location.href = mailtoUrl;
                 mostrarAlerta('Se abrirá su cliente de correo para enviar la factura', 'success');
             })
-            .catch(function(error) { 
+            .catch(error => { 
                 console.error('Error:', error); 
                 mostrarAlerta('Error al obtener la factura', 'danger');
             });
@@ -521,45 +503,33 @@ async function cargarListaVentas() {
         const response = await fetch(API_BASE_URL + '/ventas', { headers: getHeaders() });
         if (response.ok) {
             const ventas = await response.json();
-            
-            if (tablaVentas) {
-                tablaVentas.destroy();
-            }
+            if (tablaVentas) tablaVentas.destroy();
             
             tablaVentas = $('#tablaVentas').DataTable({
                 data: ventas,
                 columns: [
                     { data: 'idVenta' },
-                    { data: 'fechaHora', render: function(data) { return new Date(data).toLocaleString(); } },
-                    { data: null, render: function(data, type, row) { return row.cliente ? row.cliente.nombre : 'Mostrador'; } },
+                    { data: 'fechaHora', render: data => new Date(data).toLocaleString() },
+                    { data: null, render: (data, type, row) => row.cliente ? row.cliente.nombre : 'Mostrador' },
                     { 
                         data: null, 
-                        render: function(data) {
+                        render: data => {
                             let subtotal = 0;
                             if (data.detalles) {
-                                for (let i = 0; i < data.detalles.length; i++) {
-                                    const d = data.detalles[i];
-                                    subtotal = subtotal + (d.precioUnitario * d.cantidad - (d.descuento || 0));
+                                for (let d of data.detalles) {
+                                    subtotal += (d.precioUnitario * d.cantidad - (d.descuento || 0));
                                 }
                             }
                             const total = subtotal + (data.impuesto || 0) - (data.descuento || 0);
                             return total.toFixed(2);
                         }
                     },
-                    { data: null, render: function(data, type, row) { return row.estado ? row.estado.nombre : 'Completada'; } },
+                    { data: null, render: (data, type, row) => row.estado ? row.estado.nombre : 'Completada' },
                     { 
                         data: 'idVenta',
-                        render: function(id) {
-                            return '<button class="btn btn-sm btn-info me-1" onclick="imprimirFactura(' + id + ')" title="Imprimir Factura">' +
-                                       '<i class="fas fa-print"></i>' +
-                                   '</button>' +
-                                   '<button class="btn btn-sm btn-success me-1" onclick="enviarPorWhatsapp(' + id + ')" title="Enviar por WhatsApp">' +
-                                       '<i class="fab fa-whatsapp"></i>' +
-                                   '</button>' +
-                                   '<button class="btn btn-sm btn-primary" onclick="enviarPorEmail(' + id + ')" title="Enviar por Email">' +
-                                       '<i class="fas fa-envelope"></i>' +
-                                   '</button>';
-                        }
+                        render: id => `<button class="btn btn-sm btn-info me-1" onclick="imprimirFactura(${id})" title="Imprimir Factura"><i class="fas fa-print"></i></button>
+                                       <button class="btn btn-sm btn-success me-1" onclick="enviarPorWhatsapp(${id})" title="Enviar por WhatsApp"><i class="fab fa-whatsapp"></i></button>
+                                       <button class="btn btn-sm btn-primary" onclick="enviarPorEmail(${id})" title="Enviar por Email"><i class="fas fa-envelope"></i></button>`
                     }
                 ],
                 language: {
@@ -568,8 +538,6 @@ async function cargarListaVentas() {
                     "info": "Mostrando _START_ a _END_ de _TOTAL_ registros",
                     "infoEmpty": "Mostrando 0 a 0 de 0 registros",
                     "infoFiltered": "(filtrado de _MAX_ registros totales)",
-                    "infoPostFix": "",
-                    "thousands": ",",
                     "lengthMenu": "Mostrar _MENU_ registros",
                     "loadingRecords": "Cargando...",
                     "processing": "Procesando...",
@@ -580,10 +548,6 @@ async function cargarListaVentas() {
                         "last": "Último",
                         "next": "Siguiente",
                         "previous": "Anterior"
-                    },
-                    "aria": {
-                        "sortAscending": ": activar para ordenar la columna de manera ascendente",
-                        "sortDescending": ": activar para ordenar la columna de manera descendente"
                     }
                 },
                 order: [[0, 'desc']]
@@ -598,16 +562,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const userData = JSON.parse(localStorage.getItem('currentUser') || '{}');
     const formVenta = document.getElementById('formVenta');
     
-    console.log('Usuario logueado en ventas:', userData);
-    
     const rolesPermitidos = ['ADMIN', 'admin', 'ADMINISTRADOR', 'Administrador', 'VENDEDOR', 'vendedor'];
-    let tienePermiso = false;
-    for (let i = 0; i < rolesPermitidos.length; i++) {
-        if (userData.rol === rolesPermitidos[i]) {
-            tienePermiso = true;
-            break;
-        }
-    }
+    let tienePermiso = rolesPermitidos.includes(userData.rol);
     
     if (tienePermiso) {
         if (formVenta) formVenta.style.display = 'block';
@@ -632,32 +588,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const sidebar = document.getElementById('sidebar');
         if (sidebar.style.width === '260px') {
             sidebar.style.width = '70px';
-            const spans = document.querySelectorAll('.sidebar-modern .nav-link span');
-            for (let i = 0; i < spans.length; i++) {
-                if (spans[i]) spans[i].style.display = 'none';
-            }
-            const headings = document.querySelectorAll('.sidebar-modern .sidebar-heading');
-            for (let i = 0; i < headings.length; i++) {
-                if (headings[i]) headings[i].style.display = 'none';
-            }
-            const icons = document.querySelectorAll('.sidebar-modern .nav-link i');
-            for (let i = 0; i < icons.length; i++) {
-                if (icons[i]) icons[i].style.marginRight = '0';
-            }
+            document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'none');
+            document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'none');
+            document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '0');
         } else {
             sidebar.style.width = '260px';
-            const spans = document.querySelectorAll('.sidebar-modern .nav-link span');
-            for (let i = 0; i < spans.length; i++) {
-                if (spans[i]) spans[i].style.display = 'inline';
-            }
-            const headings = document.querySelectorAll('.sidebar-modern .sidebar-heading');
-            for (let i = 0; i < headings.length; i++) {
-                if (headings[i]) headings[i].style.display = 'block';
-            }
-            const icons = document.querySelectorAll('.sidebar-modern .nav-link i');
-            for (let i = 0; i < icons.length; i++) {
-                if (icons[i]) icons[i].style.marginRight = '12px';
-            }
+            document.querySelectorAll('.sidebar-modern .nav-link span').forEach(span => span.style.display = 'inline');
+            document.querySelectorAll('.sidebar-modern .sidebar-heading').forEach(heading => heading.style.display = 'block');
+            document.querySelectorAll('.sidebar-modern .nav-link i').forEach(icon => icon.style.marginRight = '12px');
         }
     });
     
@@ -665,27 +603,26 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnBuscar) {
         btnBuscar.removeEventListener('click', buscarProductoVenta);
         btnBuscar.addEventListener('click', buscarProductoVenta);
-        console.log('Evento de búsqueda asignado');
     }
     
     const btnRegistrar = document.getElementById('btnRegistrarVenta');
     if (btnRegistrar) {
+        btnRegistrar.removeEventListener('click', registrarVenta);
         btnRegistrar.addEventListener('click', registrarVenta);
     }
     
     const montoPagadoInput = document.getElementById('montoPagado');
     if (montoPagadoInput) {
-        montoPagadoInput.addEventListener('input', function() {
-            calcularTotales();
-        });
+        montoPagadoInput.addEventListener('input', () => calcularTotales());
     }
     
     const descuentoInput = document.getElementById('descuentoGlobalInput');
     if (descuentoInput) {
-        descuentoInput.addEventListener('input', function() {
-            calcularTotales();
-        });
+        descuentoInput.addEventListener('input', () => calcularTotales());
     }
+    
+    // Inicializar carrito vacío y totales en cero
+    actualizarCarrito();
 });
 
 window.actualizarCantidad = actualizarCantidad;
