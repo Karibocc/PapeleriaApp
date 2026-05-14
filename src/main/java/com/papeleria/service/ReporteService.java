@@ -146,6 +146,8 @@ public class ReporteService {
         return reportes;
     }
 
+    // ==================== MÉTODOS CORREGIDOS PARA UTILIDAD ====================
+
     public List<ReporteUtilidadDTO> getUtilidadPorMes(int year) {
         List<ReporteUtilidadDTO> reportes = new ArrayList<>();
         
@@ -153,17 +155,17 @@ public class ReporteService {
             LocalDateTime inicio = LocalDateTime.of(year, month, 1, 0, 0);
             LocalDateTime fin = inicio.plusMonths(1).minusSeconds(1);
             
-            BigDecimal ingresos = getTotalVentas(inicio, fin);
-            BigDecimal costos = getTotalCompras(inicio, fin);
-            BigDecimal utilidad = ingresos.subtract(costos);
+            BigDecimal ingresos = ventaRepository.sumTotalVentasPorFecha(inicio, fin);
+            BigDecimal utilidad = ventaRepository.sumUtilidadPorFecha(inicio, fin);
+            BigDecimal costos = ingresos.subtract(utilidad);
             BigDecimal margen = ingresos.compareTo(BigDecimal.ZERO) > 0 ? 
                 utilidad.divide(ingresos, 4, RoundingMode.HALF_UP).multiply(new BigDecimal(100)) : BigDecimal.ZERO;
             
             ReporteUtilidadDTO dto = new ReporteUtilidadDTO();
             dto.setPeriodo(year + "-" + String.format("%02d", month));
-            dto.setIngresos(ingresos);
-            dto.setCostos(costos);
-            dto.setUtilidad(utilidad);
+            dto.setIngresos(ingresos != null ? ingresos : BigDecimal.ZERO);
+            dto.setCostos(costos != null ? costos : BigDecimal.ZERO);
+            dto.setUtilidad(utilidad != null ? utilidad : BigDecimal.ZERO);
             dto.setMargen(margen);
             reportes.add(dto);
         }
@@ -175,21 +177,23 @@ public class ReporteService {
         LocalDateTime inicio = fechaInicio.atStartOfDay();
         LocalDateTime fin = fechaFin.atTime(LocalTime.MAX);
         
-        BigDecimal ingresos = getTotalVentas(inicio, fin);
-        BigDecimal costos = getTotalCompras(inicio, fin);
-        BigDecimal utilidad = ingresos.subtract(costos);
+        BigDecimal ingresos = ventaRepository.sumTotalVentasPorFecha(inicio, fin);
+        BigDecimal utilidad = ventaRepository.sumUtilidadPorFecha(inicio, fin);
+        BigDecimal costos = ingresos.subtract(utilidad);
         BigDecimal margen = ingresos.compareTo(BigDecimal.ZERO) > 0 ? 
             utilidad.divide(ingresos, 4, RoundingMode.HALF_UP).multiply(new BigDecimal(100)) : BigDecimal.ZERO;
         
         ReporteUtilidadDTO dto = new ReporteUtilidadDTO();
         dto.setPeriodo(fechaInicio + " al " + fechaFin);
-        dto.setIngresos(ingresos);
-        dto.setCostos(costos);
-        dto.setUtilidad(utilidad);
+        dto.setIngresos(ingresos != null ? ingresos : BigDecimal.ZERO);
+        dto.setCostos(costos != null ? costos : BigDecimal.ZERO);
+        dto.setUtilidad(utilidad != null ? utilidad : BigDecimal.ZERO);
         dto.setMargen(margen);
         
         return dto;
     }
+
+    // ==================== MÉTODOS OPTIMIZADOS PARA RESUMEN ====================
 
     public Map<String, Object> getResumen() {
         Map<String, Object> resumen = new HashMap<>();
@@ -200,14 +204,21 @@ public class ReporteService {
         LocalDateTime inicioMes = LocalDate.now().withDayOfMonth(1).atStartOfDay();
         LocalDateTime finMes = LocalDate.now().atTime(LocalTime.MAX);
         
-        resumen.put("ventasHoy", getTotalVentas(inicioHoy, finHoy));
-        resumen.put("ventasMes", getTotalVentas(inicioMes, finMes));
-        resumen.put("comprasHoy", getTotalCompras(inicioHoy, finHoy));
-        resumen.put("comprasMes", getTotalCompras(inicioMes, finMes));
+        BigDecimal ventasHoy = ventaRepository.sumTotalVentasPorFecha(inicioHoy, finHoy);
+        BigDecimal ventasMes = ventaRepository.sumTotalVentasPorFecha(inicioMes, finMes);
+        BigDecimal comprasHoy = getTotalCompras(inicioHoy, finHoy);
+        BigDecimal comprasMes = getTotalCompras(inicioMes, finMes);
+        
+        resumen.put("ventasHoy", ventasHoy != null ? ventasHoy : BigDecimal.ZERO);
+        resumen.put("ventasMes", ventasMes != null ? ventasMes : BigDecimal.ZERO);
+        resumen.put("comprasHoy", comprasHoy != null ? comprasHoy : BigDecimal.ZERO);
+        resumen.put("comprasMes", comprasMes != null ? comprasMes : BigDecimal.ZERO);
         resumen.put("productosStockBajo", getProductosConStockBajo().size());
         
         return resumen;
     }
+
+    // ==================== MÉTODOS PRIVADOS ====================
 
     private BigDecimal calcularTotalVenta(Venta venta) {
         BigDecimal subtotal = venta.getDetalles().stream()
@@ -226,15 +237,6 @@ public class ReporteService {
                 .multiply(BigDecimal.valueOf(detalle.getCantidad()))
                 .subtract(detalle.getDescuento());
         return ingresoTotal.subtract(costoTotal);
-    }
-
-    private BigDecimal getTotalVentas(LocalDateTime inicio, LocalDateTime fin) {
-        List<Venta> ventas = ventaRepository.findVentasPorFecha(inicio, fin);
-        BigDecimal total = BigDecimal.ZERO;
-        for (Venta v : ventas) {
-            total = total.add(calcularTotalVenta(v));
-        }
-        return total;
     }
 
     private BigDecimal getTotalCompras(LocalDateTime inicio, LocalDateTime fin) {

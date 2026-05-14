@@ -156,6 +156,15 @@ public class VentaService {
         return utilidad != null ? utilidad : BigDecimal.ZERO;
     }
 
+    // NUEVO MÉTODO PARA UTILIDAD POR PERÍODO PERSONALIZADO (Útil para reportes)
+    @Transactional(readOnly = true)
+    public BigDecimal obtenerUtilidadPorPeriodo(LocalDate fechaInicio, LocalDate fechaFin) {
+        LocalDateTime inicio = fechaInicio.atStartOfDay();
+        LocalDateTime fin = fechaFin.atTime(LocalTime.MAX);
+        BigDecimal utilidad = ventaRepository.sumUtilidadPorFecha(inicio, fin);
+        return utilidad != null ? utilidad : BigDecimal.ZERO;
+    }
+
     // ==================== FACTURACIÓN Y VENTAS ====================
 
     @Transactional(readOnly = true)
