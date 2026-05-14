@@ -4,7 +4,6 @@ import com.papeleria.dto.FacturaDTO;
 import com.papeleria.dto.TopProductoDTO;
 import com.papeleria.dto.VentaRequestDTO;
 import com.papeleria.entity.*;
-import com.papeleria.exception.ResourceNotFoundException;
 import com.papeleria.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,10 +14,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class VentaService {
@@ -38,65 +34,131 @@ public class VentaService {
     @Autowired
     private DetalleVentaRepository detalleVentaRepository;
 
+    // ==================== MÉTODOS PARA DASHBOARD ====================
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> obtenerResumenDashboard() {
+        LocalDate ahora = LocalDate.now();
+        LocalDateTime inicioMes = LocalDate.of(ahora.getYear(), ahora.getMonth(), 1).atStartOfDay();
+        LocalDateTime finMes = LocalDate.of(ahora.getYear(), ahora.getMonth(), ahora.lengthOfMonth()).atTime(LocalTime.MAX);
+        
+        BigDecimal totalVentasMes = ventaRepository.sumTotalVentasPorFecha(inicioMes, finMes);
+        Long cantidadVentasMes = ventaRepository.countVentasPorFecha(inicioMes, finMes);
+        BigDecimal utilidadMes = ventaRepository.sumUtilidadPorFecha(inicioMes, finMes);
+        
+        Map<String, Object> resumen = new HashMap<>();
+        resumen.put("totalVentasMes", totalVentasMes != null ? totalVentasMes : BigDecimal.ZERO);
+        resumen.put("cantidadVentasMes", cantidadVentasMes != null ? cantidadVentasMes : 0L);
+        resumen.put("utilidadMes", utilidadMes != null ? utilidadMes : BigDecimal.ZERO);
+        
+        System.out.println("=== RESUMEN DASHBOARD ===");
+        System.out.println("Total ventas mes: " + totalVentasMes);
+        System.out.println("Cantidad ventas mes: " + cantidadVentasMes);
+        System.out.println("Utilidad mes: " + utilidadMes);
+        
+        return resumen;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Venta> obtenerVentasUltimos7Dias() {
+        LocalDateTime inicio = LocalDate.now().minusDays(7).atStartOfDay();
+        LocalDateTime fin = LocalDate.now().atTime(LocalTime.MAX);
+        List<Venta> ventas = ventaRepository.findVentasPorFecha(inicio, fin);
+        System.out.println("Ventas últimos 7 días: " + ventas.size());
+        return ventas;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<LocalDate, BigDecimal> obtenerUtilidadPorDiaUltimos7Dias() {
+        Map<LocalDate, BigDecimal> utilidadPorDia = new LinkedHashMap<>();
+        LocalDate hoy = LocalDate.now();
+        
+        for (int i = 7; i >= 0; i--) {
+            LocalDate dia = hoy.minusDays(i);
+            LocalDateTime inicio = dia.atStartOfDay();
+            LocalDateTime fin = dia.atTime(LocalTime.MAX);
+            BigDecimal utilidad = ventaRepository.sumUtilidadPorFecha(inicio, fin);
+            utilidadPorDia.put(dia, utilidad != null ? utilidad : BigDecimal.ZERO);
+        }
+        return utilidadPorDia;
+    }
+
+    // Método necesario para DashboardRestController
+    @Transactional(readOnly = true)
+    public List<Object[]> obtenerTopProductosRaw(LocalDateTime inicio, LocalDateTime fin) {
+        return ventaRepository.findProductosMasVendidos(inicio, fin, 5);
+    }
+
+    // ==================== MÉTODOS EXISTENTES ACTUALIZADOS ====================
+
+    @Transactional(readOnly = true)
     public List<Venta> listarTodas() {
         return ventaRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Venta obtenerPorId(Integer id) {
         return ventaRepository.findById(id).orElse(null);
     }
 
+    @Transactional(readOnly = true)
     public List<Venta> obtenerVentasPorFechas(LocalDateTime inicio, LocalDateTime fin) {
         return ventaRepository.findVentasPorFecha(inicio, fin);
     }
 
+    @Transactional(readOnly = true)
     public List<Venta> obtenerVentasPorCliente(Integer idCliente) {
         return ventaRepository.findByClienteIdCliente(idCliente);
     }
 
+    @Transactional(readOnly = true)
     public List<Venta> obtenerVentasPorUsuario(Integer idUsuario) {
         return ventaRepository.findByUsuarioIdUsuario(idUsuario);
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> obtenerTotalesDelDia() {
         LocalDateTime inicio = LocalDate.now().atStartOfDay();
         LocalDateTime fin = LocalDate.now().atTime(LocalTime.MAX);
-        List<Venta> ventas = ventaRepository.findVentasPorFecha(inicio, fin);
-        
-        BigDecimal totalVentas = BigDecimal.ZERO;
-        for (Venta venta : ventas) {
-            BigDecimal totalVenta = venta.getMontoPagado().subtract(venta.getDescuento());
-            totalVentas = totalVentas.add(totalVenta);
-        }
+        BigDecimal totalVentas = ventaRepository.sumTotalVentasPorFecha(inicio, fin);
+        Long cantidadVentas = ventaRepository.countVentasPorFecha(inicio, fin);
         
         Map<String, Object> resultado = new HashMap<>();
-        resultado.put("totalVentas", totalVentas);
-        resultado.put("cantidadVentas", ventas.size());
+        resultado.put("totalVentas", totalVentas != null ? totalVentas : BigDecimal.ZERO);
+        resultado.put("cantidadVentas", cantidadVentas != null ? cantidadVentas : 0L);
         resultado.put("fecha", LocalDate.now().toString());
         return resultado;
     }
 
+    @Transactional(readOnly = true)
     public Map<String, Object> obtenerTotalesDelMes() {
         LocalDate ahora = LocalDate.now();
         LocalDateTime inicio = LocalDate.of(ahora.getYear(), ahora.getMonth(), 1).atStartOfDay();
         LocalDateTime fin = LocalDate.of(ahora.getYear(), ahora.getMonth(), ahora.lengthOfMonth()).atTime(LocalTime.MAX);
         
-        List<Venta> ventas = ventaRepository.findVentasPorFecha(inicio, fin);
-        
-        BigDecimal totalVentas = BigDecimal.ZERO;
-        for (Venta venta : ventas) {
-            BigDecimal totalVenta = venta.getMontoPagado().subtract(venta.getDescuento());
-            totalVentas = totalVentas.add(totalVenta);
-        }
+        BigDecimal totalVentas = ventaRepository.sumTotalVentasPorFecha(inicio, fin);
+        Long cantidadVentas = ventaRepository.countVentasPorFecha(inicio, fin);
         
         Map<String, Object> resultado = new HashMap<>();
-        resultado.put("totalVentas", totalVentas);
-        resultado.put("cantidadVentas", ventas.size());
+        resultado.put("totalVentas", totalVentas != null ? totalVentas : BigDecimal.ZERO);
+        resultado.put("cantidadVentas", cantidadVentas != null ? cantidadVentas : 0L);
         resultado.put("mes", ahora.getMonth().toString());
         resultado.put("ano", ahora.getYear());
         return resultado;
     }
 
+    @Transactional(readOnly = true)
+    public BigDecimal obtenerUtilidadDelMes() {
+        LocalDate ahora = LocalDate.now();
+        LocalDateTime inicio = LocalDate.of(ahora.getYear(), ahora.getMonth(), 1).atStartOfDay();
+        LocalDateTime fin = LocalDate.of(ahora.getYear(), ahora.getMonth(), ahora.lengthOfMonth()).atTime(LocalTime.MAX);
+        BigDecimal utilidad = ventaRepository.sumUtilidadPorFecha(inicio, fin);
+        return utilidad != null ? utilidad : BigDecimal.ZERO;
+    }
+
+    // ==================== FACTURACIÓN Y VENTAS ====================
+
+    @Transactional(readOnly = true)
     public FacturaDTO obtenerFactura(Integer idVenta) {
         Venta venta = ventaRepository.findById(idVenta)
                 .orElseThrow(() -> new RuntimeException("Venta no encontrada con id: " + idVenta));
@@ -253,6 +315,7 @@ public class VentaService {
         return venta;
     }
 
+    @Transactional(readOnly = true)
     public List<TopProductoDTO> obtenerTopProductos(LocalDate fechaInicio, LocalDate fechaFin) {
         LocalDateTime inicio = fechaInicio.atStartOfDay();
         LocalDateTime fin = fechaFin.atTime(LocalTime.MAX);

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -49,4 +50,15 @@ public interface VentaRepository extends JpaRepository<Venta, Integer> {
            "GROUP BY p.idProducto, p.nombre " +
            "ORDER BY SUM(d.cantidad) DESC")
     List<TopProductoDTO> findTopProductosEntreFechas(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+    @Query("SELECT COALESCE(SUM(v.montoPagado - v.descuento), 0) FROM Venta v WHERE v.fechaHora BETWEEN :inicio AND :fin")
+    BigDecimal sumTotalVentasPorFecha(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+    
+    @Query("SELECT COUNT(v) FROM Venta v WHERE v.fechaHora BETWEEN :inicio AND :fin")
+    Long countVentasPorFecha(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+    
+    @Query("SELECT COALESCE(SUM((d.precioUnitario - p.precioCompra) * d.cantidad), 0) " +
+           "FROM Venta v JOIN v.detalles d JOIN d.producto p " +
+           "WHERE v.fechaHora BETWEEN :inicio AND :fin")
+    BigDecimal sumUtilidadPorFecha(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 }

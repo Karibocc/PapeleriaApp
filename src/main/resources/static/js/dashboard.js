@@ -3,7 +3,7 @@
 // Funciones para el panel de control principal
 // ============================================
 
-const API_BASE_URL = 'http://localhost:8085/api';
+const API_BASE_URL = '/api';  // Usamos ruta relativa, el proxy de Spring Boot resuelve
 
 // Variables globales para los gráficos
 let ventasChart = null;
@@ -66,79 +66,88 @@ function cerrarSesion() {
 
 async function cargarProductos() {
     try {
-        const response = await fetch(`${API_BASE_URL}/productos`, { headers: getHeaders() });
+        const response = await fetch(`${API_BASE_URL}/productos/total`, { headers: getHeaders() });
         if (response.ok) {
             const data = await response.json();
+            const total = data.total || 0;
             const totalProductosElement = document.getElementById('totalProductos');
             if (totalProductosElement) {
-                totalProductosElement.innerText = data.length || 0;
+                totalProductosElement.innerText = total;
             }
         }
     } catch (error) {
         console.error('Error cargando productos:', error);
+        document.getElementById('totalProductos').innerText = 'Error';
     }
 }
 
 async function cargarClientes() {
     try {
-        const response = await fetch(`${API_BASE_URL}/clientes`, { headers: getHeaders() });
+        const response = await fetch(`${API_BASE_URL}/clientes/total`, { headers: getHeaders() });
         if (response.ok) {
             const data = await response.json();
+            const total = data.total || 0;
             const totalClientesElement = document.getElementById('totalClientes');
             if (totalClientesElement) {
-                totalClientesElement.innerText = data.length || 0;
+                totalClientesElement.innerText = total;
             }
         }
     } catch (error) {
         console.error('Error cargando clientes:', error);
+        document.getElementById('totalClientes').innerText = 'Error';
     }
 }
 
 async function cargarVentasMes() {
     try {
-        const hoy = new Date();
-        const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-        const finMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-        
-        const response = await fetch(`${API_BASE_URL}/reportes/utilidades?inicio=${inicioMes.toISOString().split('T')[0]}&fin=${finMes.toISOString().split('T')[0]}`, { headers: getHeaders() });
+        const response = await fetch(`${API_BASE_URL}/ventas/totales-mes`, { headers: getHeaders() });
         if (response.ok) {
             const data = await response.json();
-            const total = data.reduce((sum, item) => sum + (item.totalIngresos || 0), 0);
+            const totalVentas = data.totalVentas || 0;
             const ventasMesElement = document.getElementById('ventasMes');
             if (ventasMesElement) {
-                ventasMesElement.innerText = `$${total.toFixed(2)}`;
+                ventasMesElement.innerText = new Intl.NumberFormat('es-CO', {
+                    style: 'currency',
+                    currency: 'COP',
+                    minimumFractionDigits: 0
+                }).format(totalVentas);
             }
         }
     } catch (error) {
         console.error('Error cargando ventas del mes:', error);
+        document.getElementById('ventasMes').innerText = '$0';
     }
 }
 
 async function cargarStockBajo() {
     try {
-        const response = await fetch(`${API_BASE_URL}/productos`, { headers: getHeaders() });
+        const response = await fetch(`${API_BASE_URL}/productos/stock-bajo`, { headers: getHeaders() });
         if (response.ok) {
             const productos = await response.json();
-            const stockBajo = productos.filter(p => p.stockActual <= p.stockMinimo);
             const stockBajoElement = document.getElementById('stockBajo');
             if (stockBajoElement) {
-                stockBajoElement.innerText = stockBajo.length || 0;
+                stockBajoElement.innerText = productos.length || 0;
             }
             
             const tbody = document.getElementById('tablaStockBajoBody');
             if (tbody) {
                 tbody.innerHTML = '';
-                stockBajo.slice(0, 10).forEach(p => {
-                    tbody.innerHTML += `</tr>
-                        <td>${p.nombre || ''}</td>
-                        <td>${p.stockActual || 0}</td>
-                        <td>${p.stockMinimo || 0}</td>
-                      表`;
-                });
+                if (productos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center">No hay productos con stock bajo</td></tr>';
+                } else {
+                    productos.slice(0, 10).forEach(p => {
+                        tbody.innerHTML += `<tr>
+                            <td>${p.nombre || ''}</td>
+                            <td>${p.stockActual || 0}</td>
+                            <td>${p.stockMinimo || 0}</td>
+                        </tr>`;
+                    });
+                }
             }
         }
     } catch (error) {
         console.error('Error cargando stock bajo:', error);
+        document.getElementById('stockBajo').innerText = 'Error';
     }
 }
 
@@ -148,16 +157,11 @@ async function cargarStockBajo() {
 
 async function cargarGraficoVentas() {
     try {
-        const hoy = new Date();
-        const hace7Dias = new Date();
-        hace7Dias.setDate(hoy.getDate() - 7);
-        
-        const response = await fetch(`${API_BASE_URL}/reportes/utilidades?inicio=${hace7Dias.toISOString().split('T')[0]}&fin=${hoy.toISOString().split('T')[0]}`, { headers: getHeaders() });
+        const response = await fetch(`${API_BASE_URL}/ventas/ultimos-7-dias`, { headers: getHeaders() });
         if (response.ok) {
-            const data = await response.json();
-            
+            const data = await response.json();  // [{fecha, total}, ...]
             const labels = data.map(item => item.fecha);
-            const ingresos = data.map(item => item.totalIngresos || 0);
+            const ingresos = data.map(item => item.total);
             
             const ctx = document.getElementById('ventasChart');
             if (ctx) {
@@ -169,7 +173,7 @@ async function cargarGraficoVentas() {
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Ingresos',
+                            label: 'Ventas (COP)',
                             data: ingresos,
                             borderColor: '#667eea',
                             backgroundColor: 'rgba(102, 126, 234, 0.1)',
@@ -181,7 +185,19 @@ async function cargarGraficoVentas() {
                         responsive: true,
                         maintainAspectRatio: true,
                         plugins: {
-                            legend: { position: 'top' }
+                            tooltip: {
+                                callbacks: {
+                                    label: context => `Total: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(context.raw)}`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: value => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value)
+                                }
+                            }
                         }
                     }
                 });
@@ -194,17 +210,13 @@ async function cargarGraficoVentas() {
 
 async function cargarTopProductos() {
     try {
-        const hoy = new Date();
-        const hace30Dias = new Date();
-        hace30Dias.setDate(hoy.getDate() - 30);
-        
-        const response = await fetch(`${API_BASE_URL}/ventas/top-productos?inicio=${hace30Dias.toISOString().split('T')[0]}&fin=${hoy.toISOString().split('T')[0]}`, { headers: getHeaders() });
+        const response = await fetch(`${API_BASE_URL}/productos/top`, { headers: getHeaders() });
         if (response.ok) {
-            const data = await response.json();
+            const data = await response.json();  // [{nombre, cantidad}, ...]
             const top5 = data.slice(0, 5);
             
             const labels = top5.map(item => item.nombre);
-            const cantidades = top5.map(item => item.totalVendido);
+            const cantidades = top5.map(item => item.cantidad);
             
             const ctx = document.getElementById('topProductosChart');
             if (ctx) {
@@ -232,14 +244,18 @@ async function cargarTopProductos() {
             
             const lista = document.getElementById('topProductosLista');
             if (lista) {
-                lista.innerHTML = '<ul class="list-group">';
-                top5.forEach(p => {
-                    lista.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">
-                        ${p.nombre || ''}
-                        <span class="badge bg-primary rounded-pill">${p.totalVendido || 0} vendidos</span>
-                    </li>`;
-                });
-                lista.innerHTML += '</ul>';
+                if (top5.length === 0) {
+                    lista.innerHTML = '<p class="text-muted">No hay datos de productos más vendidos.</p>';
+                } else {
+                    lista.innerHTML = '<ul class="list-group">';
+                    top5.forEach(p => {
+                        lista.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                            ${p.nombre || ''}
+                            <span class="badge bg-primary rounded-pill">${p.cantidad || 0} vendidos</span>
+                        </li>`;
+                    });
+                    lista.innerHTML += '</ul>';
+                }
             }
         }
     } catch (error) {
@@ -249,16 +265,11 @@ async function cargarTopProductos() {
 
 async function cargarUtilidad() {
     try {
-        const hoy = new Date();
-        const hace7Dias = new Date();
-        hace7Dias.setDate(hoy.getDate() - 7);
-        
-        const response = await fetch(`${API_BASE_URL}/reportes/utilidades?inicio=${hace7Dias.toISOString().split('T')[0]}&fin=${hoy.toISOString().split('T')[0]}`, { headers: getHeaders() });
+        const response = await fetch(`${API_BASE_URL}/utilidad/por-dia`, { headers: getHeaders() });
         if (response.ok) {
-            const data = await response.json();
-            
+            const data = await response.json();  // [{fecha, utilidad}, ...]
             const labels = data.map(item => item.fecha);
-            const utilidades = data.map(item => item.totalUtilidad || 0);
+            const utilidades = data.map(item => item.utilidad);
             
             const ctx = document.getElementById('utilidadChart');
             if (ctx) {
@@ -270,7 +281,7 @@ async function cargarUtilidad() {
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: 'Utilidad',
+                            label: 'Utilidad (COP)',
                             data: utilidades,
                             backgroundColor: '#1cc88a',
                             borderColor: '#1cc88a',
@@ -281,7 +292,19 @@ async function cargarUtilidad() {
                         responsive: true,
                         maintainAspectRatio: true,
                         plugins: {
-                            legend: { position: 'top' }
+                            tooltip: {
+                                callbacks: {
+                                    label: context => `Utilidad: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(context.raw)}`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: value => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value)
+                                }
+                            }
                         }
                     }
                 });

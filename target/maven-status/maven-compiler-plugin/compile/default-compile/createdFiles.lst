@@ -8,6 +8,7 @@ com\papeleria\security\model\AuthRequest.class
 com\papeleria\PapeleriaApplication.class
 com\papeleria\entity\RolUsuario.class
 com\papeleria\patterns\behavioral\command\CommandInvoker.class
+com\papeleria\controller\DashboardRestController.class
 com\papeleria\entity\DetalleVenta.class
 com\papeleria\service\patterns\adapter\ImpresionFacturaAdapter.class
 com\papeleria\repository\CategoriaRepository.class

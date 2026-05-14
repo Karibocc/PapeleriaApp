@@ -31,4 +31,9 @@ public interface ProductoRepository extends JpaRepository<Producto, Integer> {
 
     @Query("SELECT p FROM Producto p WHERE p.stockActual <= :stockMinimo AND p.activo = true")
     List<Producto> findProductosConStockBajo(@Param("stockMinimo") Integer stockMinimo);
+
+    // Método solicitado por DashboardRestController (delegación)
+    default List<Producto> findByStockActualLessThanStockMinimo() {
+        return findProductosConStockBajo();
+    }
 }
